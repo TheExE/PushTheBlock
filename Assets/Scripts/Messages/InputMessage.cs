@@ -1,15 +1,22 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
 
-public class InputMessage : MonoBehaviour {
+[Serializable]
+public class InputMessage : ConnectionId, Message
+{
+    public InputMessage(int connectionId)
+    {
+        connectionID = connectionId;
+    }
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+    public int GetConnectionId()
+    {
+        return connectionID;
+    }
+
+    public NetworkMessageType GetNetworkMessageType()
+    {
+        return NetworkMessageType.Input;
+    }
 }

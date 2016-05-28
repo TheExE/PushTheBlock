@@ -21,7 +21,7 @@ public class Client : MonoBehaviour
 
     void Start()
     {
-        playerBody = GetComponent<Rigidbody>();
+        /* Set up connection stuff */
         NetworkTransport.Init();
         ConnectionConfig config = new ConnectionConfig();
         reliableChannel = config.AddChannel(QosType.Reliable);
@@ -33,7 +33,11 @@ public class Client : MonoBehaviour
         byte error;
         connectionId = NetworkTransport.Connect(socketId, "127.0.0.1", Server.PORT, 0, out error);
         id++;
+
+        /* Create player */
         player = Instantiate(playerPrefab) as GameObject;
+        player.transform.parent = transform;
+        playerBody = GetComponentInChildren<Rigidbody>();
     }
 
 
@@ -49,8 +53,8 @@ public class Client : MonoBehaviour
         sendPositionTimer += Time.deltaTime;
         if (sendPositionTimer > 1)
         {
-            Message m = new Message(connectionId);
-            m.Position = transform.position;
+            PositionMessage m = new PositionMessage(connectionId);
+            m.Position.Vect3 = transform.position;
             SendNetworkMessage(m, connectionId);
             sendPositionTimer = 0f;
         }
@@ -80,24 +84,32 @@ public class Client : MonoBehaviour
                 Stream stream = new MemoryStream(recBuffer);
                 BinaryFormatter formatter = new BinaryFormatter();
                 Message message = (Message)formatter.Deserialize(stream);
+                switch(message.GetNetworkMessageType())
+                {
+                    case NetworkMessageType.Input:
+                        break;
 
-                if (message.ConnectionId == connectionId)
-                {
-                    player.transform.position = message.Position;
-                }
-                else
-                {
-                    int existIndex = otherPlayers.FindIndex(it => it.ConnectionId == message.ConnectionId);
-                    if (existIndex > -1)
-                    {
-                        otherPlayers[existIndex].PlayerCharacterObj.transform.position = message.Position;
-                    }
-                    else
-                    {
-                        GameObject other = Instantiate(playerPrefab) as GameObject;
-                        other.transform.position = message.Position;
-                        otherPlayers.Add(new Player(other, message.ConnectionId));
-                    }
+                    case NetworkMessageType.Position:
+                        PositionMessage m = message as PositionMessage;
+                        if (m.ConnectionID == connectionId)
+                        {
+                            player.transform.position = m.Position.Vect3;
+                        }
+                        else
+                        {
+                            int existIndex = otherPlayers.FindIndex(it => it.ConnectionId == m.ConnectionID);
+                            if (existIndex > -1)
+                            {
+                                otherPlayers[existIndex].PlayerCharacterObj.transform.position = m.Position.Vect3;
+                            }
+                            else
+                            {
+                                GameObject other = Instantiate(playerPrefab) as GameObject;
+                                other.transform.position = m.Position.Vect3;
+                                otherPlayers.Add(new Player(other, m.ConnectionID));
+                            }
+                        }
+                        break;
                 }
 
                 break;

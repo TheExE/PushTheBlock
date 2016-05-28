@@ -17,6 +17,7 @@ public class Server : MonoBehaviour
     
 	void Start ()
     {
+        Application.runInBackground = true;
         NetworkTransport.Init();
         ConnectionConfig config = new ConnectionConfig();
         reliableChannel = config.AddChannel(QosType.Reliable);
@@ -64,6 +65,11 @@ public class Server : MonoBehaviour
                 break;
 
             case NetworkEventType.DisconnectEvent: //4
+
+                Player p = allPlayers.Find(it => it.ConnectionId == connectionId);
+                Destroy(p.PlayerCharacterObj);
+                allPlayers.Remove(p);
+
                 break;
         }
 
@@ -72,16 +78,16 @@ public class Server : MonoBehaviour
         {
             foreach(Player p in allPlayers)
             {
-                Message m = new Message(p.ConnectionId);
-                m.Position = p.PlayerCharacterObj.transform.position;
+                PositionMessage m = new PositionMessage(p.ConnectionId);
+                m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
                 SendNetworkMessage(m, p.ConnectionId);
 
                 /* Send all player positions that are with in radius */
                 var allOtherPlayer = allPlayers.FindAll(it => it.ConnectionId != p.ConnectionId);
                 foreach(Player otherP in allOtherPlayer)
                 {
-                    Message mm = new Message(otherP.ConnectionId);
-                    mm.Position = otherP.PlayerCharacterObj.transform.position;
+                    PositionMessage mm = new PositionMessage(otherP.ConnectionId);
+                    mm.Position.Vect3 = otherP.PlayerCharacterObj.transform.position;
                     SendNetworkMessage(mm, otherP.ConnectionId);
                 }
             }

@@ -2,35 +2,30 @@
 using System.Collections;
 using System;
 
-public class PositionMessage : Message
+[Serializable]
+public class PositionMessage : ConnectionId, Message
 {
     private SerializableVector3 position;
-    private int connectionId;
 
     public PositionMessage(int connectionId)
-    {
+    { 
         position = new SerializableVector3();
-        this.connectionId = connectionId;
+        connectionID = connectionId;
     }
 
-    public Vector3 Position
+    public SerializableVector3 Position
     {
-        get { return position.Vect3; }
-        set { position.Vect3 = value; }
+        get { return position; }
     }
 
-    public int ConnectionId
-    {
-        get { return connectionId; }
-    }
 
-    MessageType Message.GetType()
+    public NetworkMessageType GetNetworkMessageType()
     {
-        return MessageType.Position;
+        return NetworkMessageType.Position;
     }
 
     public int GetConnectionId()
     {
-        return connectionId;
+        return connectionID;
     }
 }

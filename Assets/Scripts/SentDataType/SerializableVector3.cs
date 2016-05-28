@@ -52,14 +52,11 @@ public class SerializableVector3
         get { return z; }
     }
 
-    public Vector3 Vect3
-    {
+   public Vector3 Vect3
+   {
         get { return new Vector3(x, y, z); }
-        set
-        {
-            x = value.x;
-            y = value.y;
-            z = value.z;
-        }
-    }
+        set { x = value.x; y = value.y; z = value.z; }
+   }
+
+
 }
