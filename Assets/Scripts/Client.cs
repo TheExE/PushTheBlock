@@ -18,6 +18,7 @@ public class Client : MonoBehaviour
     private float sendPositionTimer = 0;
     private BinaryFormatter binFormater = new BinaryFormatter();
     private Rigidbody playerBody;
+    private Vector2 touchStartPosition;
 
     void Start()
     {
@@ -29,9 +30,8 @@ public class Client : MonoBehaviour
         HostTopology topology = new HostTopology(config, 100);
 
         socketId = NetworkTransport.AddHost(topology, Server.PORT + id);
-        Debug.Log("client Socket Open. SocketId is: " + socketId);
         byte error;
-        connectionId = NetworkTransport.Connect(socketId, "127.0.0.1", Server.PORT, 0, out error);
+        connectionId = NetworkTransport.Connect(socketId, "192.168.56.1", Server.PORT, 0, out error);
         id++;
 
         /* Create player */
@@ -74,6 +74,7 @@ public class Client : MonoBehaviour
         switch (recData)
         {
             case NetworkEventType.Nothing:         //1
+
                 break;
 
             case NetworkEventType.ConnectEvent:    //2
@@ -84,7 +85,7 @@ public class Client : MonoBehaviour
                 Stream stream = new MemoryStream(recBuffer);
                 BinaryFormatter formatter = new BinaryFormatter();
                 Message message = (Message)formatter.Deserialize(stream);
-                switch(message.GetNetworkMessageType())
+                switch (message.GetNetworkMessageType())
                 {
                     case NetworkMessageType.Input:
                         break;
@@ -115,27 +116,92 @@ public class Client : MonoBehaviour
                 break;
 
             case NetworkEventType.DisconnectEvent: //4
+                Application.Quit();
                 break;
         }
     }
     private void HandleInput()
     {
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        List<InputType> inputs = new List<InputType>();
+        if (Input.GetKey(KeyCode.UpArrow))
         {
-            playerBody.AddForce(Vector3.up);
+            MoveFoward();
+            inputs.Add(InputType.MoveForward);
         }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        else if (Input.GetKey(KeyCode.DownArrow))
         {
-            playerBody.AddForce(Vector3.down);
+            MoveBack();
+            inputs.Add(InputType.MoveBack);
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        if (Input.GetKey(KeyCode.LeftArrow))
         {
-            playerBody.AddForce(Vector3.left);
+            MoveLeft();
+            inputs.Add(InputType.MoveLeft);
         }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        else if (Input.GetKey(KeyCode.RightArrow))
         {
-            playerBody.AddForce(Vector3.right);
+            MoveRight();
+            inputs.Add(InputType.MoveRight);
+        }
+
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.touches[0];
+            switch (touch.phase)
+            {
+                case TouchPhase.Began:
+                    touchStartPosition = touch.position;
+                    break;
+
+                case TouchPhase.Ended:
+                    float swipeDistVertical = (new Vector3(0, touch.position.y, 0) - new Vector3(0, touchStartPosition.y, 0)).magnitude;
+                    float swipeDistHorizontal = (new Vector3(touch.position.x, 0, 0) - new Vector3(touchStartPosition.x, 0, 0)).magnitude;
+                    Debug.Log("vertical:" + swipeDistVertical);
+                    Debug.Log("horizontal:" + swipeDistHorizontal);
+
+                    if (swipeDistVertical > swipeDistHorizontal && swipeDistVertical > 0.1f)
+                    {
+                        float swipeValue = Mathf.Sign(touch.position.y - touchStartPosition.y);
+                        if (swipeValue > 0)//up swipe
+                        {
+                            MoveFoward();
+                            inputs.Add(InputType.MoveForward);
+                        }
+                        else if (swipeValue < 0)//down swipe
+                        {
+                            MoveBack();
+                            inputs.Add(InputType.MoveBack);
+                        }
+                    }
+                    else if (swipeDistHorizontal > 0.1f)
+                    {
+                        float swipeValue = Mathf.Sign(touch.position.x - touchStartPosition.x);
+                        if (swipeValue > 0)//right swipe
+                        {
+                            MoveRight();
+                            inputs.Add(InputType.MoveRight);
+                        }
+                        else if (swipeValue < 0)//left swipe
+                        {
+                            MoveLeft();
+                            inputs.Add(InputType.MoveLeft);
+                        }
+                    }
+                    break;
+            }
+        }
+
+
+        if (inputs.Count > 0)
+        {
+            InputMessage m = new InputMessage(connectionId, inputs.ToArray());
+            SendNetworkMessage(m, connectionId);
+        }
+
+        if(Input.GetKey(KeyCode.Escape))
+        {
+            Application.Quit();
         }
     }
     private void SendNetworkMessage(Message m, int connectionID)
@@ -150,5 +216,21 @@ public class Client : MonoBehaviour
         binFormater.Serialize(stream, m);
 
         return stream.GetBuffer();
+    }
+    private void MoveLeft()
+    {
+        playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * Time.deltaTime);
+    }
+    private void MoveRight()
+    {
+        playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * Time.deltaTime);
+    }
+    public void MoveBack()
+    {
+        playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * Time.deltaTime);
+    }
+    public void MoveFoward()
+    {
+        playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * Time.deltaTime);
     }
 }

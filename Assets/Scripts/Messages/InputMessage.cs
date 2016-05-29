@@ -5,14 +5,22 @@ using System;
 [Serializable]
 public class InputMessage : ConnectionId, Message
 {
-    public InputMessage(int connectionId)
+    private InputType[] inputType;
+
+    public InputMessage(int connectionId, InputType[] inputType)
     {
+        this.inputType = inputType;
         connectionID = connectionId;
     }
 
     public int GetConnectionId()
     {
         return connectionID;
+    }
+
+    public InputType[] InputTypeMsg
+    {
+        get { return inputType; }
     }
 
     public NetworkMessageType GetNetworkMessageType()

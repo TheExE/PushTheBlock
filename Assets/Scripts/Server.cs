@@ -14,6 +14,7 @@ public class Server : MonoBehaviour
     private int hostId;
     private float sendPositionTimer = 0f;
     private BinaryFormatter binFormater = new BinaryFormatter();
+    private StayOnPlain sticktoPlain;
     
 	void Start ()
     {
@@ -24,7 +25,9 @@ public class Server : MonoBehaviour
         unReliableChannel = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, 100);
         hostId = NetworkTransport.AddHost(topology, PORT);
-       // NetworkTransport.AddWebsocketHost(topology, PORT, null);
+        // NetworkTransport.AddWebsocketHost(topology, PORT, null);
+
+        sticktoPlain = new StayOnPlain(allPlayers);
     }
 	
 	void Update ()
@@ -49,7 +52,6 @@ public class Server : MonoBehaviour
 
                 if(!allPlayers.Exists(it => it.ConnectionId == connectionId))
                 {
-                    Debug.Log("I AM HERE !");
                     var a = Instantiate(player) as GameObject;
                     a.transform.parent = transform;
                     allPlayers.Add(new Player(a, connectionId));
@@ -59,8 +61,46 @@ public class Server : MonoBehaviour
 
             case NetworkEventType.DataEvent:       //3
 
-               /** Stream stream = new MemoryStream(recBuffer);
-                Message message = (Message)binFormater.Deserialize(stream);*/
+                Stream stream = new MemoryStream(recBuffer);
+                Message message = (Message)binFormater.Deserialize(stream);
+
+                switch (message.GetNetworkMessageType())
+                {
+                    case NetworkMessageType.Input:
+                        InputMessage m = message as InputMessage;
+                        Rigidbody playerBody = allPlayers.Find(it => it.ConnectionId == m.ConnectionID)
+                            .PlayerCharacterObj.GetComponent<Rigidbody>();
+                        foreach(InputType type in m.InputTypeMsg)
+                        {
+                            switch (type)
+                            {
+                                case InputType.MoveBack:
+                                    playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED);
+                                    break;
+
+                                case InputType.MoveForward:
+                                    playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED);
+                                    break;
+
+                                case InputType.MoveLeft:
+                                    playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED);
+                                    break;
+
+                                case InputType.MoveRight:
+                                    playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED);
+                                    break;
+                            }
+
+                        }
+
+                        break;
+
+                    case NetworkMessageType.Position:
+
+
+                        break;
+                }
+
                 
                 break;
 
@@ -74,7 +114,7 @@ public class Server : MonoBehaviour
         }
 
         sendPositionTimer += Time.deltaTime;
-        if(sendPositionTimer > 2f)
+        if(sendPositionTimer > 0.1f)
         {
             foreach(Player p in allPlayers)
             {
@@ -94,6 +134,16 @@ public class Server : MonoBehaviour
             sendPositionTimer = 0;
         }
 
+        sticktoPlain.Update();
+        foreach(Player p in allPlayers)
+        {
+            Rigidbody rg = p.PlayerCharacterObj.GetComponent<Rigidbody>();
+            if (rg.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
+            {
+                rg.velocity = rg.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
+            }
+        }
+      
     }
 
     private void SendNetworkMessage(Message m, int connectionID)
@@ -102,7 +152,6 @@ public class Server : MonoBehaviour
         byte error;
         NetworkTransport.Send(hostId, connectionID, unReliableChannel, buffer, buffer.Length, out error);
     }
-
     private byte[] SerializeMessage(Message m)
     {
         MemoryStream stream = new MemoryStream();
