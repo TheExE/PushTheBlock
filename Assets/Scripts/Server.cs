@@ -97,6 +97,13 @@ public class Server : MonoBehaviour
 
                     case NetworkMessageType.Position:
 
+                        PositionMessage mP = message as PositionMessage;
+                        Player keyPlayer = allPlayers.Find(it => it.ConnectionId == mP.ConnectionID);
+                        Vector3 playerPosition = keyPlayer.PlayerCharacterObj.transform.position;
+                        if((playerPosition - mP.Position.Vect3).sqrMagnitude > 4)
+                        {
+                            SendPosition(keyPlayer);
+                        }
 
                         break;
                 }
@@ -114,14 +121,10 @@ public class Server : MonoBehaviour
         }
 
         sendPositionTimer += Time.deltaTime;
-        if(sendPositionTimer > 0.1f)
+        if(sendPositionTimer > 0.5f)
         {
             foreach(Player p in allPlayers)
             {
-                PositionMessage m = new PositionMessage(p.ConnectionId);
-                m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
-                SendNetworkMessage(m, p.ConnectionId);
-
                 /* Send all player positions that are with in radius */
                 var allOtherPlayer = allPlayers.FindAll(it => it.ConnectionId != p.ConnectionId);
                 foreach(Player otherP in allOtherPlayer)
@@ -158,5 +161,11 @@ public class Server : MonoBehaviour
         binFormater.Serialize(stream, m);
 
         return stream.GetBuffer();
+    }
+    private void SendPosition(Player p)
+    {
+        PositionMessage m = new PositionMessage(p.ConnectionId);
+        m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
+        SendNetworkMessage(m, p.ConnectionId);
     }
 }

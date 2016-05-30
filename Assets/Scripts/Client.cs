@@ -8,7 +8,6 @@ public class Client : MonoBehaviour
 {
     public GameObject playerPrefab;
 
-    private static int id = 1;
     private int socketId;
     private int reliableChannel;
     private int unReliableChannel;
@@ -29,10 +28,9 @@ public class Client : MonoBehaviour
         unReliableChannel = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, 100);
 
-        socketId = NetworkTransport.AddHost(topology, Server.PORT + id);
+        socketId = NetworkTransport.AddHost(topology);
         byte error;
         connectionId = NetworkTransport.Connect(socketId, "192.168.56.1", Server.PORT, 0, out error);
-        id++;
 
         /* Create player */
         player = Instantiate(playerPrefab) as GameObject;
