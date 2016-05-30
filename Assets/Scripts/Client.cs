@@ -36,6 +36,7 @@ public class Client : MonoBehaviour
         player = Instantiate(playerPrefab) as GameObject;
         player.transform.parent = transform;
         playerBody = GetComponentInChildren<Rigidbody>();
+        GetComponentInChildren<Renderer>().material.color = Color.red;
     }
 
 
@@ -44,15 +45,20 @@ public class Client : MonoBehaviour
         HandleInput();
         ReceiveData();
         SendData();
+
+        if (playerBody.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
+        {
+            playerBody.velocity = playerBody.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
+        }
     }
 
     private void SendData()
     {
         sendPositionTimer += Time.deltaTime;
-        if (sendPositionTimer > 1)
+        if (sendPositionTimer > 0.5f)
         {
             PositionMessage m = new PositionMessage(connectionId);
-            m.Position.Vect3 = transform.position;
+            m.Position.Vect3 = player.transform.position;
             SendNetworkMessage(m, connectionId);
             sendPositionTimer = 0f;
         }
@@ -92,7 +98,7 @@ public class Client : MonoBehaviour
                         PositionMessage m = message as PositionMessage;
                         if (m.ConnectionID == connectionId)
                         {
-                            player.transform.position = m.Position.Vect3;
+                            player.transform.position = new Vector3(m.Position.X, m.Position.Y, m.Position.Z);
                         }
                         else
                         {
@@ -217,18 +223,18 @@ public class Client : MonoBehaviour
     }
     private void MoveLeft()
     {
-        playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * Time.deltaTime);
+        playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED);
     }
     private void MoveRight()
     {
-        playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * Time.deltaTime);
+        playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED);
     }
     public void MoveBack()
     {
-        playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * Time.deltaTime);
+        playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED);
     }
     public void MoveFoward()
     {
-        playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * Time.deltaTime);
+        playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED);
     }
 }
