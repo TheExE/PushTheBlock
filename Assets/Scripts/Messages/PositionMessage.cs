@@ -7,10 +7,10 @@ public class PositionMessage : ConnectionId, Message
 {
     private SerializableVector3 position;
 
-    public PositionMessage(int connectionId)
+    public PositionMessage(int receiverId)
     { 
         position = new SerializableVector3();
-        connectionID = connectionId;
+        this.receiverid = receiverId;
     }
 
     public SerializableVector3 Position
@@ -24,8 +24,8 @@ public class PositionMessage : ConnectionId, Message
         return NetworkMessageType.Position;
     }
 
-    public int GetConnectionId()
+    public int GetReceiverId()
     {
-        return connectionID;
+        return receiverid;
     }
 }

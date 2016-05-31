@@ -3,11 +3,14 @@ using UnityEngine.Networking;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+
+
 public class Server : MonoBehaviour
 {
-    public static int PORT = 9991;
+    public const int PORT = 9991;
     public GameObject player;
 
+    private static float serverTime = 0.02f; 
     private List<Player> allPlayers = new List<Player>();
     private int reliableChannel;
     private int unReliableChannel;
@@ -55,6 +58,12 @@ public class Server : MonoBehaviour
                     var a = Instantiate(player) as GameObject;
                     a.transform.parent = transform;
                     allPlayers.Add(new Player(a, connectionId));
+
+                    AuthenticateMessage mA = new AuthenticateMessage(connectionId, connectionId);
+                    SendNetworkReliableMessage(mA, connectionId);
+                    PositionMessage mP = new PositionMessage(connectionId);
+                    mP.Position.Vect3 = a.transform.position;
+                    SendNetworkUnreliableMessage(mP, connectionId);
                 }
               
                 break;
@@ -67,27 +76,27 @@ public class Server : MonoBehaviour
                 switch (message.GetNetworkMessageType())
                 {
                     case NetworkMessageType.Input:
-                        InputMessage m = message as InputMessage;
-                        Rigidbody playerBody = allPlayers.Find(it => it.ConnectionId == m.ConnectionID)
+                        InputMessage mI = message as InputMessage;
+                        Rigidbody playerBody = allPlayers.Find(it => it.ConnectionId == mI.ReceiverId)
                             .PlayerCharacterObj.GetComponent<Rigidbody>();
-                        foreach(InputType type in m.InputTypeMsg)
+                        foreach(InputType type in mI.InputTypeMsg)
                         {
                             switch (type)
                             {
                                 case InputType.MoveBack:
-                                    playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED);
+                                    playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * serverTime);
                                     break;
 
                                 case InputType.MoveForward:
-                                    playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED);
+                                    playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * serverTime);
                                     break;
 
                                 case InputType.MoveLeft:
-                                    playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED);
+                                    playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * serverTime);
                                     break;
 
                                 case InputType.MoveRight:
-                                    playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED);
+                                    playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * serverTime);
                                     break;
                             }
 
@@ -98,7 +107,7 @@ public class Server : MonoBehaviour
                     case NetworkMessageType.Position:
 
                         PositionMessage mP = message as PositionMessage;
-                        Player keyPlayer = allPlayers.Find(it => it.ConnectionId == mP.ConnectionID);
+                        Player keyPlayer = allPlayers.Find(it => it.ConnectionId == mP.ReceiverId);
                         Vector3 playerPosition = keyPlayer.PlayerCharacterObj.transform.position;
                         if((playerPosition - mP.Position.Vect3).sqrMagnitude > 4)
                         {
@@ -117,6 +126,13 @@ public class Server : MonoBehaviour
                 Destroy(p.PlayerCharacterObj);
                 allPlayers.Remove(p);
 
+                DisconnectMessage m = new DisconnectMessage(connectionId);
+                foreach(Player player in allPlayers)
+                {
+                    SendNetworkReliableMessage(m, player.ConnectionId);
+                }
+                
+
                 break;
         }
 
@@ -131,7 +147,7 @@ public class Server : MonoBehaviour
                 {
                     PositionMessage mm = new PositionMessage(otherP.ConnectionId);
                     mm.Position.Vect3 = otherP.PlayerCharacterObj.transform.position;
-                    SendNetworkMessage(mm, otherP.ConnectionId);
+                    SendNetworkUnreliableMessage(mm, p.ConnectionId);
                 }
             }
             sendPositionTimer = 0;
@@ -149,11 +165,17 @@ public class Server : MonoBehaviour
       
     }
 
-    private void SendNetworkMessage(Message m, int connectionID)
+    private void SendNetworkUnreliableMessage(Message m, int connectionID)
     {
         byte[] buffer = SerializeMessage(m);
         byte error;
         NetworkTransport.Send(hostId, connectionID, unReliableChannel, buffer, buffer.Length, out error);
+    }
+    private void SendNetworkReliableMessage(Message m, int connectionID)
+    {
+        byte[] buffer = SerializeMessage(m);
+        byte error;
+        NetworkTransport.Send(hostId, connectionID, reliableChannel, buffer, buffer.Length, out error);
     }
     private byte[] SerializeMessage(Message m)
     {
@@ -166,6 +188,13 @@ public class Server : MonoBehaviour
     {
         PositionMessage m = new PositionMessage(p.ConnectionId);
         m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
-        SendNetworkMessage(m, p.ConnectionId);
+        SendNetworkUnreliableMessage(m, p.ConnectionId);
     }
+
+    public static float ServerTime
+    {
+        get { return serverTime; }
+        set { serverTime = value; }
+    }
+
 }

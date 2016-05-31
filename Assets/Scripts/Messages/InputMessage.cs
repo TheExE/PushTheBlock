@@ -7,15 +7,15 @@ public class InputMessage : ConnectionId, Message
 {
     private InputType[] inputType;
 
-    public InputMessage(int connectionId, InputType[] inputType)
+    public InputMessage(int receiverId, InputType[] inputType)
     {
         this.inputType = inputType;
-        connectionID = connectionId;
+        this.receiverid = receiverId;
     }
 
-    public int GetConnectionId()
+    public int GetReceiverId()
     {
-        return connectionID;
+        return receiverid;
     }
 
     public InputType[] InputTypeMsg
