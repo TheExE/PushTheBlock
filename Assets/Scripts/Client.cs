@@ -37,7 +37,7 @@ public class Client : MonoBehaviour
 
         socketId = NetworkTransport.AddHost(topology);
         byte error;
-        connectionId = NetworkTransport.Connect(socketId, "192.168.56.1", Server.PORT, 0, out error);
+        connectionId = NetworkTransport.Connect(socketId, "192.168.50.100", Server.PORT, 0, out error);
         text.text = "This is Client";
     }
 
