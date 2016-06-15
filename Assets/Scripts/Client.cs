@@ -122,18 +122,25 @@ public class Client : MonoBehaviour
                             }
                            
                             player.transform.position = new Vector3(m.Position.X, m.Position.Y, m.Position.Z);
-                        }
+                            player.transform.localScale = new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
+                            player.transform.rotation = m.Rotation.Quaternion;
                         else
                         {
                             int existIndex = allPlayers.FindIndex(it => it.ConnectionId == m.ReceiverId);
                             if (existIndex > -1)
                             {
                                 allPlayers[existIndex].PlayerCharacterObj.transform.position = m.Position.Vect3;
+                                allPlayers[existIndex].PlayerCharacterObj.transform.localScale =
+                                    new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
+                                allPlayers[existIndex].PlayerCharacterObj.
+                                    transform.rotation = m.Rotation.Quaternion;
                             }
                             else
                             {
                                 GameObject other = Instantiate(playerPrefab) as GameObject;
                                 other.transform.position = m.Position.Vect3;
+                                other.transform.localScale = new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
+                                other.transform.rotation = m.Rotation.Quaternion;
                                 allPlayers.Add(new Player(other, m.ReceiverId));
                             }
                         }
@@ -235,6 +242,7 @@ public class Client : MonoBehaviour
             SendNetworkMessage(m, connectionId);
         }
 
+        if (Input.GetKey(KeyCode.Escape))
         if(Input.GetKey(KeyCode.Escape))
         {
             Application.Quit();

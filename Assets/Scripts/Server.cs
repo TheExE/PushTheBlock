@@ -57,12 +57,15 @@ public class Server : MonoBehaviour
                 {
                     var a = Instantiate(player) as GameObject;
                     a.transform.parent = transform;
+                    a.GetComponent<CollisionQueue>().ClientId = connectionId;
                     allPlayers.Add(new Player(a, connectionId));
 
                     AuthenticateMessage mA = new AuthenticateMessage(connectionId, connectionId);
                     SendNetworkReliableMessage(mA, connectionId);
                     PositionMessage mP = new PositionMessage(connectionId);
                     mP.Position.Vect3 = a.transform.position;
+                    mP.Scale.Vect3 = a.transform.localScale;
+                    mP.Rotation.Quaternion = a.transform.rotation;
                     SendNetworkUnreliableMessage(mP, connectionId);
                 }
               
@@ -147,6 +150,8 @@ public class Server : MonoBehaviour
                 {
                     PositionMessage mm = new PositionMessage(otherP.ConnectionId);
                     mm.Position.Vect3 = otherP.PlayerCharacterObj.transform.position;
+                    mm.Scale.Vect3 = otherP.PlayerCharacterObj.transform.localScale;
+                    mm.Rotation.Quaternion = otherP.PlayerCharacterObj.transform.rotation;
                     SendNetworkUnreliableMessage(mm, p.ConnectionId);
                 }
             }
@@ -160,6 +165,13 @@ public class Server : MonoBehaviour
             if (rg.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
             {
                 rg.velocity = rg.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
+            }
+            int winnerId = p.Update();
+            if (winnerId != -1)
+            {
+                Player winner = allPlayers.Find(it => it.ConnectionId == winnerId);
+                winner.PlayerCharacterObj.GetComponent<Transform>().localScale += new Vector3(0.5f, 0.5f, 0.5f);
+                //TODO: MESURE PACKET SIZE, SMOOTHEN MOVEMENT OF OTHER PLAYERS AND PLAYER BETWEEN CLIENT/SERVER
             }
         }
       
@@ -188,6 +200,8 @@ public class Server : MonoBehaviour
     {
         PositionMessage m = new PositionMessage(p.ConnectionId);
         m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
+        m.Scale.Vect3 = p.PlayerCharacterObj.transform.localScale;
+        m.Rotation.Quaternion = p.PlayerCharacterObj.transform.rotation;
         SendNetworkUnreliableMessage(m, p.ConnectionId);
     }
 
