@@ -22,7 +22,8 @@ public class Client : MonoBehaviour
     private Vector2 touchStartPosition;
     private bool isPlayerCreated = false;
     private int clientId;
-    private StayOnPlain stickToPlain;
+    private List<OtherPlayerPositionInterpolation> otherPlayerPosInterpolation 
+        = new List<OtherPlayerPositionInterpolation>();
 
     void Start()
     {
@@ -54,8 +55,6 @@ public class Client : MonoBehaviour
             {
                 playerBody.velocity = playerBody.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
             }
-
-            stickToPlain.Update();
         }
 
     }
@@ -64,7 +63,7 @@ public class Client : MonoBehaviour
         sendPositionTimer += Time.deltaTime;
         if (sendPositionTimer > 0.5f)
         {
-            PositionMessage m = new PositionMessage(clientId);
+            TransformMessage m = new TransformMessage(clientId);
             m.Position.Vect3 = player.transform.position;
             SendNetworkMessage(m, connectionId);
             sendPositionTimer = 0f;
@@ -104,11 +103,11 @@ public class Client : MonoBehaviour
                         text.text = "This is Client \n Id:" + clientId;
                         break;
 
-                    case NetworkMessageType.Position:
-                        PositionMessage m = message as PositionMessage;
+                    case NetworkMessageType.Transform:
+                        TransformMessage m = message as TransformMessage;
                         if (m.ReceiverId == clientId)
                         {
-                            if(!isPlayerCreated)
+                            if (!isPlayerCreated)
                             {
                                 /* Create player */
                                 player = Instantiate(playerPrefab) as GameObject;
@@ -118,18 +117,19 @@ public class Client : MonoBehaviour
                                 isPlayerCreated = true;
                                 Player p = new Player(player, clientId);
                                 allPlayers.Add(p);
-                                stickToPlain = new StayOnPlain(allPlayers);
                             }
-                           
+
                             player.transform.position = new Vector3(m.Position.X, m.Position.Y, m.Position.Z);
                             player.transform.localScale = new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
                             player.transform.rotation = m.Rotation.Quaternion;
+                        }
                         else
                         {
                             int existIndex = allPlayers.FindIndex(it => it.ConnectionId == m.ReceiverId);
                             if (existIndex > -1)
                             {
-                                allPlayers[existIndex].PlayerCharacterObj.transform.position = m.Position.Vect3;
+                                otherPlayerPosInterpolation.Find(it => it.ClientId == m.ReceiverId)
+                                     .AddPosition(m.Position.Vect3);
                                 allPlayers[existIndex].PlayerCharacterObj.transform.localScale =
                                     new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
                                 allPlayers[existIndex].PlayerCharacterObj.
@@ -137,8 +137,10 @@ public class Client : MonoBehaviour
                             }
                             else
                             {
+                                var interPos = new OtherPlayerPositionInterpolation(m.ReceiverId, allPlayers.Count);
+                                interPos.AddPosition(m.Position.Vect3);
+                                otherPlayerPosInterpolation.Add(interPos);
                                 GameObject other = Instantiate(playerPrefab) as GameObject;
-                                other.transform.position = m.Position.Vect3;
                                 other.transform.localScale = new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
                                 other.transform.rotation = m.Rotation.Quaternion;
                                 allPlayers.Add(new Player(other, m.ReceiverId));
@@ -161,6 +163,20 @@ public class Client : MonoBehaviour
             case NetworkEventType.DisconnectEvent:
                 Application.Quit();
                 break;
+        }
+
+        HandleOtherPlayerInterpolation();
+    }
+    private void HandleOtherPlayerInterpolation()
+    {
+        foreach(OtherPlayerPositionInterpolation oIntrPos in otherPlayerPosInterpolation)
+        {
+            if(oIntrPos.IsReadyToInterPol)
+            {
+                var otherPlayerPos = allPlayers[oIntrPos.PlayerIndex].PlayerCharacterObj.transform.position;
+                 allPlayers[oIntrPos.PlayerIndex].PlayerCharacterObj.transform.position = oIntrPos.
+                    Interpolate(otherPlayerPos);
+            }
         }
     }
     private void HandleInput()
