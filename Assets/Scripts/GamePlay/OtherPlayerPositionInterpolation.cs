@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class OtherPlayerPositionInterpolation
 {
-    private List<Vector3> interpolationPositions;
+    private Queue<Vector3> interpolationPositions;
     private int clientId;
     private bool isReadyToInterPos = false;
     private int playerIdx = -1;
@@ -12,19 +12,18 @@ public class OtherPlayerPositionInterpolation
     {
         this.clientId = clientId;
         this.playerIdx = playerIndex;
-        interpolationPositions = new List<Vector3>();
+        interpolationPositions = new Queue<Vector3>();
     }
 
     public void Reset()
     {
-        interpolationPositions.Clear();
         isReadyToInterPos = false;
     }
 
     public Vector3 Interpolate(Vector3 pos)
     {
-        Vector3 result = Vector3.Lerp(interpolationPositions[0], interpolationPositions[1], 1f);
-        if (pos == interpolationPositions[1])
+        Vector3 result = Vector3.Lerp(pos, interpolationPositions.Dequeue(), 1f);
+        if (interpolationPositions.Count == 0)
         {
             Reset();
         }
@@ -33,15 +32,11 @@ public class OtherPlayerPositionInterpolation
 
     public void AddPosition(Vector3 v)
     {
-        if(!isReadyToInterPos)
+        interpolationPositions.Enqueue(v);
+        if (interpolationPositions.Count > 0)
         {
-            interpolationPositions.Add(v);
-            if (interpolationPositions.Count >= 2)
-            {
-                isReadyToInterPos = true;
-            }
+            isReadyToInterPos = true;
         }
-
     }
 
     public bool IsReadyToInterPol
