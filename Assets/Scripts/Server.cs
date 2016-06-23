@@ -8,7 +8,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 public class Server : MonoBehaviour
 {
     public const int PORT = 9991;
-    public GameObject player;
+    public GameObject playerPrefab;
 
     private static float serverTime = 0.02f; 
     private List<Player> allPlayers = new List<Player>();
@@ -17,7 +17,7 @@ public class Server : MonoBehaviour
     private int hostId;
     private float sendPositionTimer = 0f;
     private BinaryFormatter binFormater = new BinaryFormatter();
-    private StayOnPlain sticktoPlain;
+    private List<Vector3> allPlayersLastSentPos = new List<Vector3>();
     
 	void Start ()
     {
@@ -28,14 +28,10 @@ public class Server : MonoBehaviour
         unReliableChannel = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, 100);
         hostId = NetworkTransport.AddHost(topology, PORT);
-        // NetworkTransport.AddWebsocketHost(topology, PORT, null);
-
-        sticktoPlain = new StayOnPlain(allPlayers);
     }
 	
 	void Update ()
     {
-
         int recHostId;
         int connectionId;
         int channelId;
@@ -48,27 +44,64 @@ public class Server : MonoBehaviour
             recBuffer, bufferSize, out dataSize, out error);
         switch (recData)
         {
-            case NetworkEventType.Nothing:         //1
+            case NetworkEventType.Nothing:
                 break;
 
-            case NetworkEventType.ConnectEvent:    //2
+            case NetworkEventType.ConnectEvent:
 
                 if(!allPlayers.Exists(it => it.ConnectionId == connectionId))
                 {
-                    var a = Instantiate(player) as GameObject;
+                    /* Create player */
+                    var a = Instantiate(playerPrefab) as GameObject;
                     a.transform.parent = transform;
+                    a.GetComponent<CollisionQueue>().ClientId = connectionId;
                     allPlayers.Add(new Player(a, connectionId));
 
+                    /* Identify the player */
                     AuthenticateMessage mA = new AuthenticateMessage(connectionId, connectionId);
                     SendNetworkReliableMessage(mA, connectionId);
-                    PositionMessage mP = new PositionMessage(connectionId);
+
+                    /* Send player his position */
+                    TransformMessage mP = new TransformMessage(connectionId);
+                    Ray r = new Ray();
+                    r.direction = Vector3.down;
+                    r.origin = transform.position;
+                    RaycastHit hitInfo = new RaycastHit();
+                    if (Physics.Raycast(transform.position + (Vector3.down*4), Vector3.down, out hitInfo))
+                    {
+                        if(hitInfo.collider.gameObject.tag == "Player")
+                        {
+                            a.transform.position = new Vector3(5f, 5f);
+                        }
+                    }
+                    else
+                    {
+                        a.transform.position = new Vector3(0f, 5f);
+                    }
+
                     mP.Position.Vect3 = a.transform.position;
-                    SendNetworkUnreliableMessage(mP, connectionId);
+                    mP.Scale.Vect3 = a.transform.localScale;
+                    mP.Rotation.Quaternion = a.transform.rotation;
+                    SendNetworkReliableMessage(mP, connectionId);
+
+                    /* Send Info about other player positions */
+                    foreach(Player player in allPlayers)
+                    {
+                        if(player.ConnectionId != connectionId)
+                        {
+                            TransformMessage msg = new TransformMessage(player.ConnectionId);
+                            msg.Position.Vect3 = player.PlayerCharacterObj.transform.position;
+                            msg.Rotation.Quaternion = player.PlayerCharacterObj.transform.rotation;
+                            msg.Scale.Vect3 = player.PlayerCharacterObj.transform.localScale;
+                            SendNetworkReliableMessage(msg, connectionId);
+                        }
+
+                    }
                 }
               
                 break;
 
-            case NetworkEventType.DataEvent:       //3
+            case NetworkEventType.DataEvent:
 
                 Stream stream = new MemoryStream(recBuffer);
                 Message message = (Message)binFormater.Deserialize(stream);
@@ -104,12 +137,12 @@ public class Server : MonoBehaviour
 
                         break;
 
-                    case NetworkMessageType.Position:
+                    case NetworkMessageType.Transform:
 
-                        PositionMessage mP = message as PositionMessage;
+                        TransformMessage mP = message as TransformMessage;
                         Player keyPlayer = allPlayers.Find(it => it.ConnectionId == mP.ReceiverId);
                         Vector3 playerPosition = keyPlayer.PlayerCharacterObj.transform.position;
-                        if((playerPosition - mP.Position.Vect3).sqrMagnitude > 4)
+                        if((playerPosition - mP.Position.Vect3).sqrMagnitude > 2)
                         {
                             SendPosition(keyPlayer);
                         }
@@ -120,7 +153,7 @@ public class Server : MonoBehaviour
                 
                 break;
 
-            case NetworkEventType.DisconnectEvent: //4
+            case NetworkEventType.DisconnectEvent: 
 
                 Player p = allPlayers.Find(it => it.ConnectionId == connectionId);
                 Destroy(p.PlayerCharacterObj);
@@ -141,25 +174,44 @@ public class Server : MonoBehaviour
         {
             foreach(Player p in allPlayers)
             {
+                var playerPos = p.PlayerCharacterObj.transform.position;
+                allPlayersLastSentPos.Add(new Vector3(playerPos.x, playerPos.y, playerPos.z));
                 /* Send all player positions that are with in radius */
                 var allOtherPlayer = allPlayers.FindAll(it => it.ConnectionId != p.ConnectionId);
                 foreach(Player otherP in allOtherPlayer)
                 {
-                    PositionMessage mm = new PositionMessage(otherP.ConnectionId);
-                    mm.Position.Vect3 = otherP.PlayerCharacterObj.transform.position;
-                    SendNetworkUnreliableMessage(mm, p.ConnectionId);
+                    var otherPPos = otherP.PlayerCharacterObj.transform.position;
+                    if(otherPPos != otherP.LastSentPosition)
+                    {
+                        TransformMessage mm = new TransformMessage(otherP.ConnectionId);
+                        mm.Position.Vect3 = otherP.PlayerCharacterObj.transform.position;
+                        mm.Scale.Vect3 = otherP.PlayerCharacterObj.transform.localScale;
+                        mm.Rotation.Quaternion = otherP.PlayerCharacterObj.transform.rotation;
+                        SendNetworkUnreliableMessage(mm, p.ConnectionId);
+                        otherP.LastSentPosition = new Vector3(mm.Position.X, mm.Position.Y, mm.Position.Z);
+                    }
                 }
             }
             sendPositionTimer = 0;
         }
 
-        sticktoPlain.Update();
+
         foreach(Player p in allPlayers)
         {
+            /* Cap player move speed */
             Rigidbody rg = p.PlayerCharacterObj.GetComponent<Rigidbody>();
             if (rg.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
             {
                 rg.velocity = rg.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
+            }
+
+            /* Check for players pushing other off the ledge */
+            int winnerId = p.Update();
+            if (winnerId != -1)
+            {
+                Player winner = allPlayers.Find(it => it.ConnectionId == winnerId);
+                winner.PlayerCharacterObj.GetComponent<Transform>().localScale += new Vector3(0.5f, 0.5f, 0.5f);
+                winner.PlayerCharacterObj.GetComponent<Rigidbody>().mass += 0.5f;
             }
         }
       
@@ -186,11 +238,12 @@ public class Server : MonoBehaviour
     }
     private void SendPosition(Player p)
     {
-        PositionMessage m = new PositionMessage(p.ConnectionId);
+        TransformMessage m = new TransformMessage(p.ConnectionId);
         m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
+        m.Scale.Vect3 = p.PlayerCharacterObj.transform.localScale;
+        m.Rotation.Quaternion = p.PlayerCharacterObj.transform.rotation;
         SendNetworkUnreliableMessage(m, p.ConnectionId);
     }
-
     public static float ServerTime
     {
         get { return serverTime; }
