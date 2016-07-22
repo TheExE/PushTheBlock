@@ -1,18 +1,18 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class Player
+public class Character
 {
     private GameObject playerCharacterObj;
     private int connectionId;
     private Vector2 homePosition;
     private Vector3 lastSentPosition;
 
-    public Player(GameObject playerCharacterObj, int connectionId)
+    public Character(GameObject characterObject, int connectionId)
     {
-        this.playerCharacterObj = playerCharacterObj;
+        this.playerCharacterObj = characterObject;
         this.connectionId = connectionId;
-        var pos = playerCharacterObj.transform.position;
+        var pos = characterObject.transform.position;
         homePosition = new Vector2(pos.x, pos.y);
         lastSentPosition = new Vector3();
     }
