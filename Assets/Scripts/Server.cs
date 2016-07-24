@@ -11,7 +11,7 @@ public class Server : MonoBehaviour
     public GameObject playerPrefab;
 
     private static float serverTime = 0.02f; 
-    private List<Player> allPlayers = new List<Player>();
+    private List<Character> allPlayers = new List<Character>();
     private int reliableChannel;
     private int unReliableChannel;
     private int hostId;
@@ -49,13 +49,13 @@ public class Server : MonoBehaviour
 
             case NetworkEventType.ConnectEvent:
 
-                if(!allPlayers.Exists(it => it.ConnectionId == connectionId))
+                if(!allPlayers.Exists(it => it.ClientId == connectionId))
                 {
                     /* Create player */
                     var a = Instantiate(playerPrefab) as GameObject;
                     a.transform.parent = transform;
                     a.GetComponent<CollisionQueue>().ClientId = connectionId;
-                    allPlayers.Add(new Player(a, connectionId));
+                    allPlayers.Add(new Character(a, connectionId));
 
                     /* Identify the player */
                     AuthenticateMessage mA = new AuthenticateMessage(connectionId, connectionId);
@@ -110,8 +110,8 @@ public class Server : MonoBehaviour
                 {
                     case NetworkMessageType.Input:
                         InputMessage mI = message as InputMessage;
-                        Rigidbody playerBody = allPlayers.Find(it => it.ConnectionId == mI.ReceiverId)
-                            .PlayerCharacterObj.GetComponent<Rigidbody>();
+                        Rigidbody playerBody = allPlayers.Find(it => it.ClientId == mI.ReceiverId)
+                            .CharacterObj.GetComponent<Rigidbody>();
                         foreach(InputType type in mI.InputTypeMsg)
                         {
                             switch (type)
@@ -140,8 +140,8 @@ public class Server : MonoBehaviour
                     case NetworkMessageType.Transform:
 
                         TransformMessage mP = message as TransformMessage;
-                        Player keyPlayer = allPlayers.Find(it => it.ConnectionId == mP.ReceiverId);
-                        Vector3 playerPosition = keyPlayer.PlayerCharacterObj.transform.position;
+                        Character keyPlayer = allPlayers.Find(it => it.ClientId == mP.ReceiverId);
+                        Vector3 playerPosition = keyPlayer.CharacterObj.transform.position;
                         if((playerPosition - mP.Position.Vect3).sqrMagnitude > 2)
                         {
                             SendPosition(keyPlayer);
@@ -155,14 +155,14 @@ public class Server : MonoBehaviour
 
             case NetworkEventType.DisconnectEvent: 
 
-                Player p = allPlayers.Find(it => it.ConnectionId == connectionId);
-                Destroy(p.PlayerCharacterObj);
+                Character p = allPlayers.Find(it => it.ClientId == connectionId);
+                Destroy(p.CharacterObj);
                 allPlayers.Remove(p);
 
                 DisconnectMessage m = new DisconnectMessage(connectionId);
-                foreach(Player player in allPlayers)
+                foreach(Character player in allPlayers)
                 {
-                    SendNetworkReliableMessage(m, player.ConnectionId);
+                    SendNetworkReliableMessage(m, player.ClientId);
                 }
                 
 
@@ -172,22 +172,22 @@ public class Server : MonoBehaviour
         sendPositionTimer += Time.deltaTime;
         if(sendPositionTimer > 0.5f)
         {
-            foreach(Player p in allPlayers)
+            foreach(Character p in allPlayers)
             {
-                var playerPos = p.PlayerCharacterObj.transform.position;
+                var playerPos = p.CharacterObj.transform.position;
                 allPlayersLastSentPos.Add(new Vector3(playerPos.x, playerPos.y, playerPos.z));
                 /* Send all player positions that are with in radius */
-                var allOtherPlayer = allPlayers.FindAll(it => it.ConnectionId != p.ConnectionId);
-                foreach(Player otherP in allOtherPlayer)
+                var allOtherPlayer = allPlayers.FindAll(it => it.ClientId != p.ClientId);
+                foreach(Character otherP in allOtherPlayer)
                 {
-                    var otherPPos = otherP.PlayerCharacterObj.transform.position;
+                    var otherPPos = otherP.CharacterObj.transform.position;
                     if(otherPPos != otherP.LastSentPosition)
                     {
-                        TransformMessage mm = new TransformMessage(otherP.ConnectionId);
-                        mm.Position.Vect3 = otherP.PlayerCharacterObj.transform.position;
-                        mm.Scale.Vect3 = otherP.PlayerCharacterObj.transform.localScale;
-                        mm.Rotation.Quaternion = otherP.PlayerCharacterObj.transform.rotation;
-                        SendNetworkUnreliableMessage(mm, p.ConnectionId);
+                        TransformMessage mm = new TransformMessage(otherP.ClientId);
+                        mm.Position.Vect3 = otherP.CharacterObj.transform.position;
+                        mm.Scale.Vect3 = otherP.CharacterObj.transform.localScale;
+                        mm.Rotation.Quaternion = otherP.CharacterObj.transform.rotation;
+                        SendNetworkUnreliableMessage(mm, p.ClientId);
                         otherP.LastSentPosition = new Vector3(mm.Position.X, mm.Position.Y, mm.Position.Z);
                     }
                 }
@@ -196,10 +196,10 @@ public class Server : MonoBehaviour
         }
 
 
-        foreach(Player p in allPlayers)
+        foreach(Character p in allPlayers)
         {
             /* Cap player move speed */
-            Rigidbody rg = p.PlayerCharacterObj.GetComponent<Rigidbody>();
+            Rigidbody rg = p.CharacterObj.GetComponent<Rigidbody>();
             if (rg.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
             {
                 rg.velocity = rg.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
@@ -209,9 +209,9 @@ public class Server : MonoBehaviour
             int winnerId = p.Update();
             if (winnerId != -1)
             {
-                Player winner = allPlayers.Find(it => it.ConnectionId == winnerId);
-                winner.PlayerCharacterObj.GetComponent<Transform>().localScale += new Vector3(0.5f, 0.5f, 0.5f);
-                winner.PlayerCharacterObj.GetComponent<Rigidbody>().mass += 0.5f;
+                Character winner = allPlayers.Find(it => it.ClientId == winnerId);
+                winner.CharacterObj.GetComponent<Transform>().localScale += new Vector3(0.5f, 0.5f, 0.5f);
+                winner.CharacterObj.GetComponent<Rigidbody>().mass += 0.5f;
             }
         }
       
@@ -236,13 +236,13 @@ public class Server : MonoBehaviour
 
         return stream.GetBuffer();
     }
-    private void SendPosition(Player p)
+    private void SendPosition(Character p)
     {
-        TransformMessage m = new TransformMessage(p.ConnectionId);
-        m.Position.Vect3 = p.PlayerCharacterObj.transform.position;
-        m.Scale.Vect3 = p.PlayerCharacterObj.transform.localScale;
-        m.Rotation.Quaternion = p.PlayerCharacterObj.transform.rotation;
-        SendNetworkUnreliableMessage(m, p.ConnectionId);
+        TransformMessage m = new TransformMessage(p.ClientId);
+        m.Position.Vect3 = p.CharacterObj.transform.position;
+        m.Scale.Vect3 = p.CharacterObj.transform.localScale;
+        m.Rotation.Quaternion = p.CharacterObj.transform.rotation;
+        SendNetworkUnreliableMessage(m, p.ClientId);
     }
     public static float ServerTime
     {

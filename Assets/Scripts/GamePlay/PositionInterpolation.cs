@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class OtherPlayerPositionInterpolation
+public class PositionInterpolation
 {
     private Queue<Vector3> interpolationPositions;
     private int clientId;
@@ -10,10 +10,8 @@ public class OtherPlayerPositionInterpolation
     private Vector3 lastLerpPosition;
     private float curLearpProg = 0f;
 
-    public OtherPlayerPositionInterpolation(int clientId, int playerIndex)
+    public PositionInterpolation()
     {
-        this.clientId = clientId;
-        this.playerIdx = playerIndex;
         interpolationPositions = new Queue<Vector3>();
     }
 

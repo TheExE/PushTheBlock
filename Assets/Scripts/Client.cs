@@ -7,23 +7,23 @@ using UnityEngine.UI;
 
 public class Client : MonoBehaviour
 {
-    public GameObject playerPrefab;
-    public Text text; 
+    public static GameObject charPrefab;
+    public Text text;
 
     private int socketId;
     private int reliableChannel;
     private int unReliableChannel;
     private int connectionId;
-    private GameObject player;
-    private List<Player> allPlayers = new List<Player>();
+
+    private ClientsDataHandler clientsDataManager;
+    private Character player;
     private float sendPositionTimer = 0;
     private BinaryFormatter binFormater = new BinaryFormatter();
     private Rigidbody playerBody;
-    private Vector2 touchStartPosition;
-    private bool isPlayerCreated = false;
+    private bool isClientsCharacterCreated = false;
     private int clientId;
-    private List<OtherPlayerPositionInterpolation> otherPlayerPosInterpolation 
-        = new List<OtherPlayerPositionInterpolation>();
+
+    private Vector2 touchStartPosition;
 
     void Start()
     {
@@ -40,13 +40,15 @@ public class Client : MonoBehaviour
         byte error;
         connectionId = NetworkTransport.Connect(socketId, "127.0.0.1", Server.PORT, 0, out error);
         text.text = "This is Client";
+
+        clientsDataManager = new ClientsDataHandler(this);
     }
 
 
     void Update()
     {
         ReceiveData();
-        if(isPlayerCreated)
+        if (isClientsCharacterCreated)
         {
             HandleInput();
             SendData();
@@ -64,7 +66,7 @@ public class Client : MonoBehaviour
         if (sendPositionTimer > 0.5f)
         {
             TransformMessage m = new TransformMessage(clientId);
-            m.Position.Vect3 = player.transform.position;
+            m.Position.Vect3 = player.CharacterObj.GetComponent<Transform>().position;
             SendNetworkMessage(m, connectionId);
             sendPositionTimer = 0f;
         }
@@ -94,69 +96,7 @@ public class Client : MonoBehaviour
                 Stream stream = new MemoryStream(recBuffer);
                 BinaryFormatter formatter = new BinaryFormatter();
                 Message message = (Message)formatter.Deserialize(stream);
-                switch (message.GetNetworkMessageType())
-                {
 
-                    case NetworkMessageType.Authenticate:
-                        AuthenticateMessage mA = message as AuthenticateMessage;
-                        clientId = mA.ClientId;
-                        text.text = "This is Client \n Id:" + clientId;
-                        break;
-
-                    case NetworkMessageType.Transform:
-                        TransformMessage m = message as TransformMessage;
-                        if (m.ReceiverId == clientId)
-                        {
-                            if (!isPlayerCreated)
-                            {
-                                /* Create player */
-                                player = Instantiate(playerPrefab) as GameObject;
-                                player.transform.parent = transform;
-                                playerBody = GetComponentInChildren<Rigidbody>();
-                                GetComponentInChildren<Renderer>().material.color = Color.red;
-                                isPlayerCreated = true;
-                                Player p = new Player(player, clientId);
-                                allPlayers.Add(p);
-                            }
-
-                            player.transform.position = new Vector3(m.Position.X, m.Position.Y, m.Position.Z);
-                            player.transform.localScale = new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
-                            player.transform.rotation = m.Rotation.Quaternion;
-                        }
-                        else
-                        {
-                            int existIndex = allPlayers.FindIndex(it => it.ConnectionId == m.ReceiverId);
-                            if (existIndex > -1)
-                            {
-                                otherPlayerPosInterpolation.Find(it => it.ClientId == m.ReceiverId)
-                                     .AddPosition(m.Position.Vect3);
-                                allPlayers[existIndex].PlayerCharacterObj.transform.localScale =
-                                    new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
-                                allPlayers[existIndex].PlayerCharacterObj.
-                                    transform.rotation = m.Rotation.Quaternion;
-                            }
-                            else
-                            {
-                                var interPos = new OtherPlayerPositionInterpolation(m.ReceiverId, allPlayers.Count);
-                                interPos.AddPosition(m.Position.Vect3);
-                                otherPlayerPosInterpolation.Add(interPos);
-                                GameObject other = Instantiate(playerPrefab) as GameObject;
-                                other.transform.localScale = new Vector3(m.Scale.X, m.Scale.Y, m.Scale.Z);
-                                other.transform.rotation = m.Rotation.Quaternion;
-                                allPlayers.Add(new Player(other, m.ReceiverId));
-                            }
-                        }
-                        break;
-
-                    case NetworkMessageType.Disconnect:
-                        Player pThatExitedGame = GetPlayerWithId(message.GetReceiverId());
-                        if(pThatExitedGame != null)
-                        {
-                            Destroy(pThatExitedGame.PlayerCharacterObj);
-                            allPlayers.Remove(pThatExitedGame);
-                        }
-                        break;
-                }
 
                 break;
 
@@ -165,20 +105,9 @@ public class Client : MonoBehaviour
                 break;
         }
 
-        HandleOtherPlayerInterpolation();
+        
     }
-    private void HandleOtherPlayerInterpolation()
-    {
-        foreach(OtherPlayerPositionInterpolation oIntrPos in otherPlayerPosInterpolation)
-        {
-            if(oIntrPos.IsReadyToInterPol)
-            {
-                var otherPlayerPos = allPlayers[oIntrPos.PlayerIndex].PlayerCharacterObj.transform.position;
-                 allPlayers[oIntrPos.PlayerIndex].PlayerCharacterObj.transform.position = oIntrPos.
-                    Interpolate(otherPlayerPos);
-            }
-        }
-    }
+   
     private void HandleInput()
     {
         List<InputType> inputs = new List<InputType>();
@@ -259,10 +188,10 @@ public class Client : MonoBehaviour
         }
 
         if (Input.GetKey(KeyCode.Escape))
-        if(Input.GetKey(KeyCode.Escape))
-        {
-            Application.Quit();
-        }
+            if (Input.GetKey(KeyCode.Escape))
+            {
+                Application.Quit();
+            }
     }
     private void SendNetworkMessage(Message m, int connectionID)
     {
@@ -293,12 +222,12 @@ public class Client : MonoBehaviour
     {
         playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * Server.ServerTime);
     }
-    private Player GetPlayerWithId(int clientId)
+    private Character GetPlayerWithId(int clientId)
     {
-        Player keyPlayer = null;
-        foreach(Player p in allPlayers)
+        Character keyPlayer = null;
+        foreach (Character p in allOtherPlayers)
         {
-            if (p.ConnectionId == clientId)
+            if (p.ClientId == clientId)
             {
                 keyPlayer = p;
                 break;
@@ -306,4 +235,42 @@ public class Client : MonoBehaviour
         }
         return keyPlayer;
     }
+    public int ClientId
+    {
+        get { return clientId; }
+    }
+    public string ClientTitle
+    {
+        get { return text.text; }
+    }
+    public void InitClient(int clientId, string clientTitle)
+    {
+        this.clientId = clientId;
+        text.text = clientTitle;
+    }
+    public bool IsClientsCharacterCreated
+    {
+        get { return isClientsCharacterCreated; }
+    }
+    public void CreateCharacter(TransformMessage mT)
+    {
+        player = new Character(Instantiate(charPrefab) as GameObject, mT.ReceiverId);
+        player.CharacterObj.transform.parent = transform;
+        playerBody = GetComponentInChildren<Rigidbody>();
+        GetComponentInChildren<Renderer>().material.color = Color.red;
+        isClientsCharacterCreated = true;
+
+        UpdateCharactersPosition(mT);
+    }
+    public void UpdateCharactersPosition(TransformMessage transformMsg)
+    {
+        player.CharacterObj.transform.position = mT.Position.Vect3;
+        player.CharacterObj.transform.localScale = mT.Scale.Vect3;
+        player.CharacterObj.transform.rotation = mT.Rotation.Quaternion;
+    }
+    public GameObject SpawnCharacter()
+    {
+        return Instantiate(charPrefab);
+    }
+
 }
