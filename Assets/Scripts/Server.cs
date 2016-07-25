@@ -85,14 +85,14 @@ public class Server : MonoBehaviour
                     SendNetworkReliableMessage(mP, connectionId);
 
                     /* Send Info about other player positions */
-                    foreach(Player player in allPlayers)
+                    foreach(Character player in allPlayers)
                     {
-                        if(player.ConnectionId != connectionId)
+                        if(player.ClientId != connectionId)
                         {
-                            TransformMessage msg = new TransformMessage(player.ConnectionId);
-                            msg.Position.Vect3 = player.PlayerCharacterObj.transform.position;
-                            msg.Rotation.Quaternion = player.PlayerCharacterObj.transform.rotation;
-                            msg.Scale.Vect3 = player.PlayerCharacterObj.transform.localScale;
+                            TransformMessage msg = new TransformMessage(player.ClientId);
+                            msg.Position.Vect3 = player.CharacterObj.transform.position;
+                            msg.Rotation.Quaternion = player.CharacterObj.transform.rotation;
+                            msg.Scale.Vect3 = player.CharacterObj.transform.localScale;
                             SendNetworkReliableMessage(msg, connectionId);
                         }
 

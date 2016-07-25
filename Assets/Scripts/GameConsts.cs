@@ -5,6 +5,9 @@ using System.Text;
 
 class GameConsts
 {
+    public const string SERVER_IP = "127.0.0.1";
+    public const int SERVER_PORT = 2;
+
     public const float MOVE_SPEED = 800f;
     public const float MAX_MOVE_SPEED = 15f;
     public const int MAX_SIMULTINEOUS_INPUTS = 2;
