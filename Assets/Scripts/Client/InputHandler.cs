@@ -5,20 +5,18 @@ public class InputHandler
 {
     private Rigidbody playerBody;
     private Vector2 touchStartPosition;
-
-    public InputHandler(Rigidbody playerBody)
-    {
-        this.playerBody = playerBody;
-    }
+    private bool isInputHandlerInited = false;
 
 
-    public List<InputType> Update()
+    public List<InputType> Update(bool isClientCreated)
     {
         List<InputType> inputs = new List<InputType>();
 
-        HandleDesktopControlls(inputs);
-        HandleTouchControlls(inputs);
-
+        if(isClientCreated)
+        {
+            HandleDesktopControlls(inputs);
+            HandleTouchControlls(inputs);
+        }
 
         if (Input.GetKey(KeyCode.Escape))
         {
@@ -26,6 +24,15 @@ public class InputHandler
         }
 
         return inputs;
+    }
+
+    public void InitInputHandler(Rigidbody playerBody)
+    {
+        if(!isInputHandlerInited)
+        {
+            this.playerBody = playerBody;
+            isInputHandlerInited = true;
+        }
     }
 
     private void HandleDesktopControlls(List<InputType> inputs)

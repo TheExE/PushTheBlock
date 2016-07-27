@@ -1,9 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class OtherPlayerManager : MonoBehaviour
+public class OtherPlayerManager
 {
-    public Client client;
+    private Client client;
     private List<OtherPlayerCharacter> allOtherPlayers = new List<OtherPlayerCharacter>();
 
     public OtherPlayerManager(Client client)
@@ -32,7 +32,7 @@ public class OtherPlayerManager : MonoBehaviour
         OtherPlayerCharacter player = allOtherPlayers.Find(it => it.ClientId == dcMsg.ReceiverId);
         if (player != null)
         {
-            Destroy(player.CharacterObj);
+            client.DestroyGameObject(player.CharacterObj);
             allOtherPlayers.Remove(player);
         }
     }
@@ -47,7 +47,7 @@ public class OtherPlayerManager : MonoBehaviour
     private void CreateOtherPlayerCharacter(TransformMessage transformMsg)
     {
         GameObject other = client.SpawnCharacter();
-        other.transform.parent = transform;
+        other.transform.parent = client.transform;
         other.transform.position = transformMsg.Position.Vect3;
         other.transform.localScale = transformMsg.Scale.Vect3;
         other.transform.rotation = transformMsg.Rotation.Quaternion;

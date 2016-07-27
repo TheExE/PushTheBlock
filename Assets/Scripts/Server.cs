@@ -6,8 +6,7 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 
 public class Server : MonoBehaviour
-{
-    public const int PORT = 9991;
+{ 
     public GameObject playerPrefab;
 
     private static float serverTime = 0.02f; 
@@ -21,13 +20,14 @@ public class Server : MonoBehaviour
     
 	void Start ()
     {
+        Application.targetFrameRate = 60;
         Application.runInBackground = true;
         NetworkTransport.Init();
         ConnectionConfig config = new ConnectionConfig();
         reliableChannel = config.AddChannel(QosType.Reliable);
         unReliableChannel = config.AddChannel(QosType.Unreliable);
         HostTopology topology = new HostTopology(config, 100);
-        hostId = NetworkTransport.AddHost(topology, PORT);
+        hostId = NetworkTransport.AddHost(topology, GameConsts.SERVER_PORT);
     }
 	
 	void Update ()

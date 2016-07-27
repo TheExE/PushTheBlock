@@ -4,9 +4,7 @@ using System.Collections.Generic;
 public class PositionInterpolation
 {
     private Queue<Vector3> interpolationPositions;
-    private int clientId;
     private bool isReadyToInterPos = false;
-    private int playerIdx = -1;
     private Vector3 lastLerpPosition;
     private float curLearpProg = 0f;
 
@@ -51,16 +49,5 @@ public class PositionInterpolation
     public bool IsReadyToInterPol
     {
         get { return isReadyToInterPos; }
-    }
-
-    public int PlayerIndex
-    {
-        get { return playerIdx; }
-    }
-
-
-    public int ClientId
-    {
-        get { return clientId; }
     }
 }
