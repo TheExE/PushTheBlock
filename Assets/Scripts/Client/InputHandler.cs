@@ -7,7 +7,6 @@ public class InputHandler
     private Vector2 touchStartPosition;
     private bool isInputHandlerInited = false;
 
-
     public List<InputType> Update(bool isClientCreated)
     {
         List<InputType> inputs = new List<InputType>();
@@ -25,7 +24,6 @@ public class InputHandler
 
         return inputs;
     }
-
     public void InitInputHandler(Rigidbody playerBody)
     {
         if(!isInputHandlerInited)
@@ -111,18 +109,18 @@ public class InputHandler
     }
     private void MoveLeft()
     {
-        playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * Server.ServerTime);
+        playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
     }
     private void MoveRight()
     {
-        playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * Server.ServerTime);
+        playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
     }
-    public void MoveBack()
+    private void MoveBack()
     {
-        playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * Server.ServerTime);
+        playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
     }
-    public void MoveFoward()
+    private void MoveFoward()
     {
-        playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * Server.ServerTime);
+        playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
     }
 }
