@@ -1,8 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-
-
 public class Server : MonoBehaviour
 { 
     public GameObject playerPrefab;
@@ -33,6 +31,7 @@ public class Server : MonoBehaviour
     {
         GameObject a = Instantiate(playerPrefab) as GameObject;
         a.transform.parent = transform;
+        a.transform.position = new Vector3(0, 30f);
         a.GetComponent<CollisionQueue>().ClientId = connectionId;
 
         return a;

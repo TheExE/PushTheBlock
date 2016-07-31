@@ -1,0 +1,37 @@
+ //     Everything good so far.
+ Ok = 0,
+ //
+ //     Host doesn't exist.
+ WrongHost = 1,
+ //
+ //     Connection doesn't exist.
+ WrongConnection = 2,
+ //
+ //     Channel doesn't exist.
+ WrongChannel = 3,
+ //
+ //     No internal resources ro acomplish request.
+ NoResources = 4,
+ //
+ //     Obsolete.
+ BadMessage = 5,
+ //
+ //     Timeout happened.
+ Timeout = 6,
+ //
+ //     Sending message too long to fit internal buffers, or user doesn't present
+ //     buffer with length enouf to contain receiving message.
+ MessageToLong = 7,
+ //
+ //     Operation is not supported.
+ WrongOperation = 8,
+ //
+ //     Different version of protocol on ends of connection.
+ VersionMismatch = 9,
+ //
+ //     Two ends of connection have different agreement about channels, channels
+ //     qos and network parameters.
+ CRCMismatch = 10,
+ //
+ //     The address supplied to connect to was invalid or could not be resolved.
+ DNSFailure = 11,

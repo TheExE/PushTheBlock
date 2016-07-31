@@ -38,7 +38,7 @@ public class ClientsNetworkManager
             if (inputs.Count > 0)
             {
                 InputMessage inputMsg = new InputMessage(playerChar.ClientId, inputs.ToArray());
-                SendNetworkMessage(inputMsg, connectionId);
+                SendRelibleMessage(inputMsg, connectionId);
             }
 
             /* Informs server about current position */
@@ -58,7 +58,7 @@ public class ClientsNetworkManager
     {
         TransformMessage m = new TransformMessage(clientId);
         m.Position.Vect3 = playerCharPos;
-        SendNetworkMessage(m, connectionId);
+        SendUnreliableMessage(m, connectionId);
     }
     private void ReceiveData(ClientsDataHandler clientsDataManager)
     {
@@ -96,11 +96,25 @@ public class ClientsNetworkManager
 
 
     }
-    private void SendNetworkMessage(Message m, int connectionID)
+    private void SendUnreliableMessage(Message m, int connectionId)
     {
         byte[] buffer = SerializeMessage(m);
         byte error;
-        NetworkTransport.Send(socketId, connectionID, unReliableChannel, buffer, buffer.Length, out error);
+        NetworkTransport.Send(socketId, connectionId, unReliableChannel, buffer, buffer.Length, out error);
+        if(error != 0)
+        {
+            Debug.Log("Error: " + error);
+        }
+    }
+    private void SendRelibleMessage(Message m, int connectionId)
+    {
+        byte[] buffer = SerializeMessage(m);
+        byte error;
+        NetworkTransport.Send(socketId, connectionId, reliableChannel, buffer, buffer.Length, out error);
+        if(error != 0)
+        {
+            Debug.Log("Error: " + error);
+        }
     }
     private byte[] SerializeMessage(Message m)
     {

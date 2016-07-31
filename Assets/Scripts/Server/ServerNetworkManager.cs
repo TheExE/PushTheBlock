@@ -50,11 +50,11 @@ public class ServerNetworkManager
                     AuthenticateMessage mA = new AuthenticateMessage(connectionId, connectionId);
                     SendNetworkReliableMessage(mA, connectionId);
 
-                    /* Send player his position */
-                    SendPositionToNewelyCreatedCharacter(server, connectionId);
-
                     /* Send Info about other player positions */
                     SendClientAllOtherCharacterPositions(connectionId);
+
+                    /* Send player his position */
+                    SendPositionToNewelyCreatedCharacter(server, characterObj.transform.position, connectionId);
                 }
 
                 break;
@@ -92,38 +92,23 @@ public class ServerNetworkManager
         m.Rotation.Quaternion = p.CharacterObj.transform.rotation;
         SendNetworkUnreliableMessage(m, p.ClientId);
     }
-    public void SendNetworkReliableMessage(Message m, int connectionID)
+    public void SendNetworkReliableMessage(Message m, int connectionId)
     {
         byte[] buffer = SerializeMessage(m);
         byte error;
-        NetworkTransport.Send(hostId, connectionID, reliableChannel, buffer, buffer.Length, out error);
+        NetworkTransport.Send(hostId, connectionId, reliableChannel, buffer, buffer.Length, out error);
     }
-    public void SendNetworkUnreliableMessage(Message m, int connectionID)
+    public void SendNetworkUnreliableMessage(Message m, int connectionId)
     {
         byte[] buffer = SerializeMessage(m);
         byte error;
-        NetworkTransport.Send(hostId, connectionID, unReliableChannel, buffer, buffer.Length, out error);
+        NetworkTransport.Send(hostId, connectionId, unReliableChannel, buffer, buffer.Length, out error);
     }
 
-    private void SendPositionToNewelyCreatedCharacter(Server server, int connectionId)
+    private void SendPositionToNewelyCreatedCharacter(Server server, Vector3 characterPos, int connectionId)
     {
         TransformMessage mP = new TransformMessage(connectionId);
-        Ray r = new Ray();
-        r.direction = Vector3.down;
-        r.origin = server.transform.position;
-        RaycastHit hitInfo = new RaycastHit();
-        Vector3 result;
-        if (Physics.Raycast(server.transform.position + (Vector3.down * 4), Vector3.down, out hitInfo) && 
-            hitInfo.collider.gameObject.tag == "Player")
-        {
-           result = new Vector3(5f, 5f);
-        }
-        else
-        {
-            result = new Vector3(0f, 5f);
-        }
-
-        mP.Position.Vect3 = result;
+        mP.Position.Vect3 = characterPos;
         mP.Scale.Vect3 = new Vector3(1f, 1f, 1f);
         mP.Rotation.Quaternion = server.transform.rotation;
         SendNetworkReliableMessage(mP, connectionId);

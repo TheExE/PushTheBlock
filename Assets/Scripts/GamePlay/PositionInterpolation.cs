@@ -46,7 +46,7 @@ public class PositionInterpolation
         }
     }
 
-    public bool IsReadyToInterPol
+    public bool IsReadyToInterpol
     {
         get { return isReadyToInterPos; }
     }

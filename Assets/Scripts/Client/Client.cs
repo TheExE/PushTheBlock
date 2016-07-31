@@ -57,12 +57,12 @@ public class Client : MonoBehaviour
     }
     public void CreateCharacter(TransformMessage mT)
     {
-        playerChar = new Character(Instantiate(charPrefab) as GameObject, mT.ReceiverId);
+        GameObject characterObject = Instantiate(charPrefab) as GameObject;
+        playerChar = new Character(characterObject, mT.ReceiverId);
         playerChar.CharacterObj.transform.parent = transform;
-        inputaHandler.InitInputHandler(GetComponentInChildren<Rigidbody>());
-        GetComponentInChildren<Renderer>().material.color = Color.red;
+        inputaHandler.InitInputHandler(characterObject.GetComponent<Rigidbody>());
+        characterObject.GetComponent<Renderer>().material.color = Color.red;
         isClientsCharacterCreated = true;
-
         UpdateCharactersPosition(mT);
     }
     public void UpdateCharactersPosition(TransformMessage transformMsg)

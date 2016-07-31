@@ -11,12 +11,10 @@ public class ClientsDataHandler
         this.client = client;
         otherPlayerCharManager = new OtherPlayerManager(client);
     }
-
     public void Update()
     {
         otherPlayerCharManager.Update();
     }
-
     public void HandleIncomingMessage(Message msg)
     {
         switch (msg.GetNetworkMessageType())
@@ -27,24 +25,25 @@ public class ClientsDataHandler
                 break;
 
             case NetworkMessageType.Transform:
+
                 TransformMessage messageTransform = msg as TransformMessage;
-                /* Is this message about me or some other people */
-                if (client.ClientId == messageTransform.ReceiverId)
+                if (!client.IsClientsCharacterCreated)
                 {
-                    if (!client.IsClientsCharacterCreated)
-                    {
-                        client.CreateCharacter(messageTransform);
-                    }
-                    else
-                    {
-                        client.UpdateCharactersPosition(messageTransform);
-                    }
+                    client.CreateCharacter(messageTransform);
                 }
                 else
                 {
-                    /* Update other player characters */
-                    otherPlayerCharManager.UpdateOtherCharPosition(messageTransform);
+                    client.UpdateCharactersPosition(messageTransform);
                 }
+                
+                break;
+
+            case NetworkMessageType.MultipleTransforms:
+
+                MultipleTranformMessage multipleTransfMsg = msg as MultipleTranformMessage;
+                /* Update other player characters */
+                otherPlayerCharManager.UpdateOtherCharPosition(multipleTransfMsg);
+
                 break;
 
             case NetworkMessageType.Disconnect:

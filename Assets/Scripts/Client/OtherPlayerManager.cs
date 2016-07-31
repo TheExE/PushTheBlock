@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class OtherPlayerManager
 {
     private Client client;
-    private List<OtherPlayerCharacter> allOtherPlayers = new List<OtherPlayerCharacter>();
+    private List<OtherPlayerCharacter> allOtherCharacters = new List<OtherPlayerCharacter>();
 
     public OtherPlayerManager(Client client)
     {
@@ -15,33 +15,36 @@ public class OtherPlayerManager
     {
         HandleOtherPlayerInterpolation();
     }
-    public void UpdateOtherCharPosition(TransformMessage transformMsg)
+    public void UpdateOtherCharPosition(MultipleTranformMessage multipleTransfMsg)
     {
-        int keyIndex = allOtherPlayers.FindIndex(it => it.ClientId == transformMsg.ReceiverId);
-        if (keyIndex > -1)
+        foreach (TransformMessage transformMsg in multipleTransfMsg.AllTransformMessages)
         {
-            UpdateOtherCharacterPosition(transformMsg);
-        }
-        else
-        {
-            CreateOtherPlayerCharacter(transformMsg);
+            int keyIndex = allOtherCharacters.FindIndex(it => it.ClientId == transformMsg.ReceiverId);
+            if (keyIndex > -1)
+            {
+                UpdateOtherCharacterPosition(transformMsg);
+            }
+            else
+            {
+                CreateOtherPlayerCharacter(transformMsg);
+            }
         }
     }
     public void DespawnDisconnectedPlayer(DisconnectMessage dcMsg)
     {
-        OtherPlayerCharacter player = allOtherPlayers.Find(it => it.ClientId == dcMsg.ReceiverId);
-        if (player != null)
+        OtherPlayerCharacter otherCharaceter = allOtherCharacters.Find(it => it.ClientId == dcMsg.ReceiverId);
+        if (otherCharaceter != null)
         {
-            client.DestroyGameObject(player.CharacterObj);
-            allOtherPlayers.Remove(player);
+            client.DestroyGameObject(otherCharaceter.CharacterObj);
+            allOtherCharacters.Remove(otherCharaceter);
         }
     }
 
     private void HandleOtherPlayerInterpolation()
     {
-        foreach (OtherPlayerCharacter playerChar in allOtherPlayers)
+        foreach (OtherPlayerCharacter otherPlayerChar in allOtherCharacters)
         {
-            playerChar.IterpolatePositions();
+            otherPlayerChar.IterpolatePositions();
         }
     }
     private void CreateOtherPlayerCharacter(TransformMessage transformMsg)
@@ -52,11 +55,11 @@ public class OtherPlayerManager
         other.transform.localScale = transformMsg.Scale.Vect3;
         other.transform.rotation = transformMsg.Rotation.Quaternion;
         OtherPlayerCharacter otherPlayerChar = new OtherPlayerCharacter(other, transformMsg.ReceiverId);
-        allOtherPlayers.Add(otherPlayerChar);
+        allOtherCharacters.Add(otherPlayerChar);
     }
     private void UpdateOtherCharacterPosition(TransformMessage transformMsg)
     {
-        foreach (OtherPlayerCharacter other in allOtherPlayers)
+        foreach (OtherPlayerCharacter other in allOtherCharacters)
         {
             if (transformMsg.ReceiverId == other.ClientId)
             {

@@ -16,7 +16,10 @@ public class OtherPlayerCharacter : Character
 
     public void IterpolatePositions()
     {
-        CharacterObj.transform.position = posInterPol.Interpolate(CharacterObj.transform.position);
+        if(posInterPol.IsReadyToInterpol)
+        {
+            CharacterObj.transform.position = posInterPol.Interpolate(CharacterObj.transform.position);
+        }
     }
 
 }

@@ -33,23 +33,29 @@ public class ServerClientDataManager
     }
     public void SendClientPosInfoOfAllOtherPlayers(ServerNetworkManager servNetworkManager, int connectionId)
     {
-        foreach (Character player in allCharacters)
+        /* Send client all TransformMessages about all other player characters */
+
+        List<TransformMessage> allCharcterPositions = new List<TransformMessage>();
+        foreach (Character playerCharacter in allCharacters)
         {
-            if (player.ClientId != connectionId)
+            if (playerCharacter.ClientId != connectionId)
             {
-                TransformMessage msg = new TransformMessage(player.ClientId);
-                msg.Position.Vect3 = player.CharacterObj.transform.position;
-                msg.Rotation.Quaternion = player.CharacterObj.transform.rotation;
-                msg.Scale.Vect3 = player.CharacterObj.transform.localScale;
-                servNetworkManager.SendNetworkReliableMessage(msg, connectionId);
+                TransformMessage msg = new TransformMessage(playerCharacter.ClientId);
+                msg.Position.Vect3 = playerCharacter.CharacterObj.transform.position;
+                msg.Rotation.Quaternion = playerCharacter.CharacterObj.transform.rotation;
+                msg.Scale.Vect3 = playerCharacter.CharacterObj.transform.localScale;
+                allCharcterPositions.Add(msg);
             }
 
         }
+        MultipleTranformMessage multipleTransfMsg = new MultipleTranformMessage(allCharcterPositions.ToArray());
+        servNetworkManager.SendNetworkReliableMessage(multipleTransfMsg, connectionId);
     }
     public void HandlePlayerInput(InputMessage msgInput)
     {
         Rigidbody playerBody = allCharacters.Find(it => it.ClientId == msgInput.ReceiverId)
                  .CharacterObj.GetComponent<Rigidbody>();
+
         foreach (InputType type in msgInput.InputTypeMsg)
         {
             switch (type)
@@ -94,6 +100,33 @@ public class ServerClientDataManager
             servNetworkManager.SendNetworkReliableMessage(m, player.ClientId);
         }
     }
+    public void SendAllPlayersAllOtherPlayerPostions(ServerNetworkManager servNetworkManger)
+    {
+        foreach (Character character in allCharacters)
+        {
+            Vector3 playerPos = character.CharacterObj.transform.position;
+            character.LastSentPosition = new Vector3(playerPos.x, playerPos.y, playerPos.z);
+
+            /* Send inform this characters client about all other characters positions */
+            List<Character> allOtherCharacters = allCharacters.FindAll(it => it.ClientId != character.ClientId);
+            List<TransformMessage> allTranformMsg = new List<TransformMessage>();
+            foreach (Character otherCharacter in allOtherCharacters)
+            {
+                var otherPPos = otherCharacter.CharacterObj.transform.position;
+                if (otherPPos != otherCharacter.LastSentPosition)
+                {
+                    TransformMessage transfMsg = new TransformMessage(otherCharacter.ClientId);
+                    transfMsg.Position.Vect3 = otherCharacter.CharacterObj.transform.position;
+                    transfMsg.Scale.Vect3 = otherCharacter.CharacterObj.transform.localScale;
+                    transfMsg.Rotation.Quaternion = otherCharacter.CharacterObj.transform.rotation;
+                    allTranformMsg.Add(transfMsg);
+                    otherCharacter.LastSentPosition = new Vector3(transfMsg.Position.X, transfMsg.Position.Y, transfMsg.Position.Z);
+                }
+            }
+            MultipleTranformMessage multipleTransfMsg = new MultipleTranformMessage(allTranformMsg.ToArray());
+            servNetworkManger.SendNetworkUnreliableMessage(multipleTransfMsg, character.ClientId);
+        }
+    }
 
     private void UpdatePlayers()
     {
@@ -113,30 +146,6 @@ public class ServerClientDataManager
                 Character winner = allCharacters.Find(it => it.ClientId == winnerId);
                 winner.CharacterObj.GetComponent<Transform>().localScale += new Vector3(0.5f, 0.5f, 0.5f);
                 winner.CharacterObj.GetComponent<Rigidbody>().mass += 0.5f;
-            }
-        }
-    }
-    public void SendAllPlayersAllOtherPlayerPostions(ServerNetworkManager servNetworkManger)
-    {
-        foreach (Character character in allCharacters)
-        {
-            var playerPos = character.CharacterObj.transform.position;
-            character.LastSentPosition = new Vector3(playerPos.x, playerPos.y, playerPos.z);
-
-            /* Send inform this characters client about all other characters positions */
-            var allOtherCharacters = allCharacters.FindAll(it => it.ClientId != character.ClientId);
-            foreach (Character otherCharacter in allOtherCharacters)
-            {
-                var otherPPos = otherCharacter.CharacterObj.transform.position;
-                if (otherPPos != otherCharacter.LastSentPosition)
-                {
-                    TransformMessage mm = new TransformMessage(otherCharacter.ClientId);
-                    mm.Position.Vect3 = otherCharacter.CharacterObj.transform.position;
-                    mm.Scale.Vect3 = otherCharacter.CharacterObj.transform.localScale;
-                    mm.Rotation.Quaternion = otherCharacter.CharacterObj.transform.rotation;
-                    servNetworkManger.SendNetworkUnreliableMessage(mm, character.ClientId);
-                    otherCharacter.LastSentPosition = new Vector3(mm.Position.X, mm.Position.Y, mm.Position.Z);
-                }
             }
         }
     }
