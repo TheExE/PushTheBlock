@@ -47,6 +47,11 @@ public class Character
     {
         get { return playerCharacterObj; }
     }
+    public Rigidbody CharacterPhysicsBody
+    {
+        get { return characterPhysicsBody; }
+    }
+
 
     public int ClientId
     {

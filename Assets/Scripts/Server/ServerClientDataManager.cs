@@ -20,10 +20,13 @@ public class ServerClientDataManager
 
             case NetworkMessageType.Transform:
 
-                TransformMessage mP = message as TransformMessage;
-                Character keyPlayer = allCharacters.Find(it => it.ClientId == mP.ReceiverId);
+                TransformMessage transformMsg = message as TransformMessage;
+                Character keyPlayer = allCharacters.Find(it => it.ClientId == transformMsg.ReceiverId);
+                Transform keyPlayerTransf = keyPlayer.CharacterObj.transform;
                 Vector3 playerPosition = keyPlayer.CharacterObj.transform.position;
-                if ((playerPosition - mP.Position.Vect3).sqrMagnitude > 2)
+                if ((playerPosition - transformMsg.Position.Vect3).sqrMagnitude > 2 ||
+                    keyPlayerTransf.localScale != transformMsg.Scale.Vect3 ||
+                    keyPlayerTransf.rotation != transformMsg.Rotation.Quaternion)
                 {
                     servNetworkManager.SendPosition(keyPlayer);
                 }
@@ -112,16 +115,12 @@ public class ServerClientDataManager
             List<TransformMessage> allTranformMsg = new List<TransformMessage>();
             foreach (Character otherCharacter in allOtherCharacters)
             {
-                var otherPPos = otherCharacter.CharacterObj.transform.position;
-                if (otherPPos != otherCharacter.LastSentPosition)
-                {
-                    TransformMessage transfMsg = new TransformMessage(otherCharacter.ClientId);
-                    transfMsg.Position.Vect3 = otherCharacter.CharacterObj.transform.position;
-                    transfMsg.Scale.Vect3 = otherCharacter.CharacterObj.transform.localScale;
-                    transfMsg.Rotation.Quaternion = otherCharacter.CharacterObj.transform.rotation;
-                    allTranformMsg.Add(transfMsg);
-                    otherCharacter.LastSentPosition = new Vector3(transfMsg.Position.X, transfMsg.Position.Y, transfMsg.Position.Z);
-                }
+                TransformMessage transfMsg = new TransformMessage(otherCharacter.ClientId);
+                transfMsg.Position.Vect3 = otherCharacter.CharacterObj.transform.position;
+                transfMsg.Scale.Vect3 = otherCharacter.CharacterObj.transform.localScale;
+                transfMsg.Rotation.Quaternion = otherCharacter.CharacterObj.transform.rotation;
+                allTranformMsg.Add(transfMsg);
+                otherCharacter.LastSentPosition = new Vector3(transfMsg.Position.X, transfMsg.Position.Y, transfMsg.Position.Z);
             }
             MultipleTranformMessage multipleTransfMsg = new MultipleTranformMessage(allTranformMsg.ToArray());
             servNetworkManger.SendNetworkUnreliableMessage(multipleTransfMsg, character.ClientId);
