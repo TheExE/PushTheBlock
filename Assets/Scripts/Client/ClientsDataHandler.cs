@@ -29,7 +29,7 @@ public class ClientsDataHandler
                 TransformMessage messageTransform = msg as TransformMessage;
                 if (!client.IsClientsCharacterCreated)
                 {
-                    client.CreateCharacter(messageTransform);
+                    client.CreateClientsCharacter(messageTransform);
                 }
                 else
                 {

@@ -4,7 +4,9 @@ using UnityEngine.UI;
 
 public class Client : MonoBehaviour
 {
-    public GameObject charPrefab;
+    public FollowClientChar cameraFollow;
+    public GameObject otherCharPrefab;
+    public GameObject clientsCharPrefab;
     public Text text;
 
     private InputHandler inputaHandler;
@@ -55,15 +57,17 @@ public class Client : MonoBehaviour
     {
         get { return isClientsCharacterCreated; }
     }
-    public void CreateCharacter(TransformMessage mT)
+    public void CreateClientsCharacter(TransformMessage mT)
     {
-        GameObject characterObject = Instantiate(charPrefab) as GameObject;
+        GameObject characterObject = Instantiate(clientsCharPrefab) as GameObject;
         playerChar = new Character(characterObject, mT.ReceiverId);
         playerChar.CharacterObj.transform.parent = transform;
         inputaHandler.InitInputHandler(characterObject.GetComponent<Rigidbody>());
         characterObject.GetComponent<Renderer>().material.color = Color.red;
         isClientsCharacterCreated = true;
         UpdateCharactersPosition(mT);
+
+        cameraFollow.InitCharacterToFollow(characterObject.transform);
     }
     public void UpdateCharactersPosition(TransformMessage transformMsg)
     {
@@ -73,7 +77,7 @@ public class Client : MonoBehaviour
     }
     public GameObject SpawnCharacter()
     {
-        return Instantiate(charPrefab);
+        return Instantiate(otherCharPrefab);
     }
     public void DestroyGameObject(GameObject gameObjToDestroy)
     {
