@@ -5,17 +5,25 @@ using System;
 [Serializable]
 public class InputMessage : ConnectionId, Message
 {
+    private static int uniqueId = 0;
+    private int msgId;
     private InputType[] inputType;
 
     public InputMessage(int receiverId, InputType[] inputType)
     {
         this.inputType = inputType;
-        this.receiverid = receiverId;
+        this.receiverId = receiverId;
+        if (msgId > GameConsts.MAX_QUEUED_MSGES)
+        {
+            uniqueId = 0;
+        }
+        uniqueId++;
+        msgId = uniqueId;
     }
 
     public int GetReceiverId()
     {
-        return receiverid;
+        return receiverId;
     }
 
     public InputType[] InputTypeMsg
@@ -26,5 +34,10 @@ public class InputMessage : ConnectionId, Message
     public NetworkMessageType GetNetworkMessageType()
     {
         return NetworkMessageType.Input;
+    }
+
+    public int RequestId
+    {
+        get { return msgId; }
     }
 }

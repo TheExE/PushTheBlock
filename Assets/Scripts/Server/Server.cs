@@ -20,7 +20,7 @@ public class Server : MonoBehaviour
 	void Update ()
     {
         networkManager.Update(this);
-        clientDataManager.Update();
+        clientDataManager.Update(networkManager);
     }
 
     public void DeleteGameObject(GameObject gameObjToDestroy)

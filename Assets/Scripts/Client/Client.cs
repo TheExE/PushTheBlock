@@ -9,7 +9,7 @@ public class Client : MonoBehaviour
     public GameObject clientsCharPrefab;
     public Text text;
 
-    private InputHandler inputaHandler;
+    private InputHandler inputHandler;
     private ClientsDataHandler clientsDataManager;
     private ClientsNetworkManager clientsNetworkManager;
     private Character playerChar;
@@ -22,7 +22,7 @@ public class Client : MonoBehaviour
         Application.targetFrameRate = 60;
         Application.runInBackground = true;
         text.text = "This is Client";
-        inputaHandler = new InputHandler();
+        inputHandler = new InputHandler();
         clientsNetworkManager = new ClientsNetworkManager();
         clientsDataManager = new ClientsDataHandler(this);
     }
@@ -30,12 +30,16 @@ public class Client : MonoBehaviour
 
     void Update()
     {
-        List<InputType> inputs = inputaHandler.Update(isClientsCharacterCreated);
+        List<InputType> inputs = inputHandler.Update(isClientsCharacterCreated);
         clientsNetworkManager.Update(clientsDataManager, playerChar, inputs);
         clientsDataManager.Update();
+        if(isClientsCharacterCreated)
+        {
+            playerChar.Update();
+        }
     }
-    
-   
+
+
     public int ClientId
     {
         get { return clientId; }
@@ -46,7 +50,7 @@ public class Client : MonoBehaviour
     }
     public void InitClient(int clientId, string clientTitle)
     {
-        if(!isClientInited)
+        if (!isClientInited)
         {
             isClientInited = true;
         }
@@ -62,18 +66,22 @@ public class Client : MonoBehaviour
         GameObject characterObject = Instantiate(clientsCharPrefab) as GameObject;
         playerChar = new Character(characterObject, mT.ReceiverId);
         playerChar.CharacterObj.transform.parent = transform;
-        inputaHandler.InitInputHandler(characterObject.GetComponent<Rigidbody>());
+        inputHandler.InitInputHandler(characterObject.GetComponent<Transform>());
         characterObject.GetComponent<Renderer>().material.color = Color.red;
         isClientsCharacterCreated = true;
-        UpdateCharactersPosition(mT);
+        UpdateCharactersTransform(mT);
 
         cameraFollow.InitCharacterToFollow(characterObject.transform);
     }
-    public void UpdateCharactersPosition(TransformMessage transformMsg)
+    public void UpdateCharactersTransform(TransformMessage transformMsg)
     {
         playerChar.CharacterObj.transform.position = transformMsg.Position.Vect3;
         playerChar.CharacterObj.transform.localScale = transformMsg.Scale.Vect3;
         playerChar.CharacterObj.transform.rotation = transformMsg.Rotation.Quaternion;
+    }
+    public void UpdateCharactersPosition(Vector3 position)
+    {
+        playerChar.CharacterObj.transform.position = position;
     }
     public GameObject SpawnCharacter()
     {
@@ -82,5 +90,13 @@ public class Client : MonoBehaviour
     public void DestroyGameObject(GameObject gameObjToDestroy)
     {
         Destroy(gameObjToDestroy);
+    }
+    public Character PlayerChar
+    {
+        get { return playerChar; }
+    }
+    public Vector3 GetPositionChangeBasedOnInput(InputMessage inputMsg)
+    {
+        return inputHandler.GetPositionChangeBasedOnInput(inputMsg);
     }
 }

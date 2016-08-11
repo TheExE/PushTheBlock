@@ -11,7 +11,6 @@ public class ClientsNetworkManager
     private int reliableChannel;
     private int unReliableChannel;
     private int connectionId;
-    private float sendPositionTimer;
 
     public ClientsNetworkManager()
     {
@@ -25,29 +24,17 @@ public class ClientsNetworkManager
         byte error;
         connectionId = NetworkTransport.Connect(socketId, GameConsts.SERVER_IP,
             GameConsts.SERVER_PORT, 0, out error);
-
-        sendPositionTimer = 0;
     }
 
 
     public void Update(ClientsDataHandler clientsDataManager, Character playerChar, List<InputType> inputs)
     {
-        if(playerChar != null)
+        /* Informs server about player inputs */
+        if (playerChar != null && inputs.Count > 0)
         {
-            /* Informs server about player inputs */
-            if (inputs.Count > 0)
-            {
-                InputMessage inputMsg = new InputMessage(playerChar.ClientId, inputs.ToArray());
-                SendRelibleMessage(inputMsg, connectionId);
-            }
-
-            /* Informs server about current position */
-            sendPositionTimer += Time.deltaTime;
-            if (sendPositionTimer > GameConsts.TTW_FOR_POS_UPDATE)
-            {
-                SendCharPosition(playerChar.CharacterObj.transform.position, playerChar.ClientId);
-                sendPositionTimer = 0f;
-            }
+            InputMessage inputMsg = new InputMessage(playerChar.ClientId, inputs.ToArray());
+            SendRelibleMessage(inputMsg, connectionId);
+            clientsDataManager.AddUnAcknowledgedMsg(inputMsg);
         }
 
         /* Receives data from server */
@@ -101,7 +88,7 @@ public class ClientsNetworkManager
         byte[] buffer = SerializeMessage(m);
         byte error;
         NetworkTransport.Send(socketId, connectionId, unReliableChannel, buffer, buffer.Length, out error);
-        if(error != 0)
+        if (error != 0)
         {
             Debug.Log("Error: " + error);
         }
@@ -111,7 +98,7 @@ public class ClientsNetworkManager
         byte[] buffer = SerializeMessage(m);
         byte error;
         NetworkTransport.Send(socketId, connectionId, reliableChannel, buffer, buffer.Length, out error);
-        if(error != 0)
+        if (error != 0)
         {
             Debug.Log("Error: " + error);
         }

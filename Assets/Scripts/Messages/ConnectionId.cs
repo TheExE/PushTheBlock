@@ -5,10 +5,10 @@ using System;
 [Serializable]
 public class ConnectionId
 {
-    protected int receiverid;
+    protected int receiverId;
 
     public int ReceiverId
     {
-        get { return receiverid; }
+        get { return receiverId; }
     }
 }

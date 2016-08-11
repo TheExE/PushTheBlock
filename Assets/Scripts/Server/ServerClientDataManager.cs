@@ -6,31 +6,17 @@ public class ServerClientDataManager
     private List<Character> allCharacters = new List<Character>();
 
 
-    public void Update()
+    public void Update(ServerNetworkManager servNetworkManager)
     {
-        UpdatePlayers();
+        UpdatePlayers(servNetworkManager);
     }
     public void HandlePlayerMessagesData(ServerNetworkManager servNetworkManager, Message message)
     {
         switch (message.GetNetworkMessageType())
         {
             case NetworkMessageType.Input:
-                HandlePlayerInput(message as InputMessage);
-                break;
 
-            case NetworkMessageType.Transform:
-
-                TransformMessage transformMsg = message as TransformMessage;
-                Character keyPlayer = allCharacters.Find(it => it.ClientId == transformMsg.ReceiverId);
-                Transform keyPlayerTransf = keyPlayer.CharacterObj.transform;
-                Vector3 playerPosition = keyPlayer.CharacterObj.transform.position;
-                if ((playerPosition - transformMsg.Position.Vect3).sqrMagnitude > 2 ||
-                    keyPlayerTransf.localScale != transformMsg.Scale.Vect3 ||
-                    keyPlayerTransf.rotation != transformMsg.Rotation.Quaternion)
-                {
-                    servNetworkManager.SendPosition(keyPlayer);
-                }
-
+                HandlePlayerInput(servNetworkManager, message as InputMessage);
                 break;
         }
     }
@@ -54,32 +40,42 @@ public class ServerClientDataManager
         MultipleTranformMessage multipleTransfMsg = new MultipleTranformMessage(allCharcterPositions.ToArray());
         servNetworkManager.SendNetworkReliableMessage(multipleTransfMsg, connectionId);
     }
-    public void HandlePlayerInput(InputMessage msgInput)
+    public void HandlePlayerInput(ServerNetworkManager servNetworkManager, InputMessage msgInput)
     {
-        Rigidbody playerBody = allCharacters.Find(it => it.ClientId == msgInput.ReceiverId)
-                 .CharacterObj.GetComponent<Rigidbody>();
+        Transform characterTransf = allCharacters.Find(it => it.ClientId == msgInput.ReceiverId)
+                 .CharacterObj.GetComponent<Transform>();  
 
         foreach (InputType type in msgInput.InputTypeMsg)
         {
             switch (type)
             {
                 case InputType.MoveBack:
-                    playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+
+                    characterTransf.position += GetVelocityToMoveBack();
                     break;
 
                 case InputType.MoveForward:
-                    playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+
+                    characterTransf.position += GetVelocityToMoveForward();
                     break;
 
                 case InputType.MoveLeft:
-                    playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+
+                    characterTransf.position += GetVelocityToMoveLeft();
                     break;
 
                 case InputType.MoveRight:
-                    playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+
+                    characterTransf.position += GetVelocityToMoveRight();
                     break;
             }
         }
+
+        
+        TransformMessage tranformMsg = new TransformMessage(msgInput.ReceiverId);
+        tranformMsg.AcknowledgmentId = msgInput.RequestId;
+        tranformMsg.Position.Vect3 = characterTransf.position;
+        servNetworkManager.SendNetworkUnreliableMessage(tranformMsg, msgInput.ReceiverId);
     }
     public bool IsPlayerAlreadySpawned(int connectionId)
     {
@@ -127,17 +123,20 @@ public class ServerClientDataManager
         }
     }
 
-    private void UpdatePlayers()
+    private Vector3 GetFinalPosition(Vector3 curPosition, Vector3 velocity)
+    {
+        /* CAP Velocity */
+        if (velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
+        {
+            velocity = velocity.normalized * GameConsts.MAX_MOVE_SPEED;
+        }
+
+        return curPosition + velocity;
+    }
+    private void UpdatePlayers(ServerNetworkManager servNetworkManager)
     {
         foreach (Character p in allCharacters)
         {
-            /* Cap player move speed */
-            Rigidbody rg = p.CharacterObj.GetComponent<Rigidbody>();
-            if (rg.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
-            {
-                rg.velocity = rg.velocity.normalized * GameConsts.MAX_MOVE_SPEED;
-            }
-
             /* Check for players pushing other off the ledge */
             int winnerId = p.Update();
             if (winnerId != -1)
@@ -145,8 +144,30 @@ public class ServerClientDataManager
                 Character winner = allCharacters.Find(it => it.ClientId == winnerId);
                 winner.CharacterObj.GetComponent<Transform>().localScale += new Vector3(0.5f, 0.5f, 0.5f);
                 winner.CharacterObj.GetComponent<Rigidbody>().mass += 0.5f;
+
+                /* Update winner player */
+                TransformMessage transfMsg = new TransformMessage(winner.ClientId);
+                transfMsg.Position.Vect3 = winner.CharacterObj.transform.position;
+                transfMsg.Scale.Vect3 = winner.CharacterObj.transform.localScale;
+                transfMsg.Rotation.Quaternion = winner.CharacterObj.transform.rotation;
+                servNetworkManager.SendNetworkReliableMessage(transfMsg, winner.ClientId);
             }
         }
     }
-
+    private Vector3 GetVelocityToMoveLeft()
+    {
+        return Vector3.left * GameConsts.MOVE_SPEED;
+    }
+    private Vector3 GetVelocityToMoveRight()
+    {
+        return Vector3.right * GameConsts.MOVE_SPEED;
+    }
+    private Vector3 GetVelocityToMoveBack()
+    {
+        return Vector3.back * GameConsts.MOVE_SPEED;
+    }
+    private Vector3 GetVelocityToMoveForward()
+    {
+        return Vector3.forward * GameConsts.MOVE_SPEED;
+    }
 }

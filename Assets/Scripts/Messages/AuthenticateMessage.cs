@@ -9,7 +9,7 @@ public class AuthenticateMessage : ConnectionId, Message
 
     public AuthenticateMessage(int receiverId, int clientId)
     {
-        this.receiverid = receiverId;
+        this.receiverId = receiverId;
         this.clientId = clientId;
     }
 
@@ -20,7 +20,7 @@ public class AuthenticateMessage : ConnectionId, Message
 
     public int GetReceiverId()
     {
-       return receiverid;
+       return receiverId;
     }
 
     public int ClientId

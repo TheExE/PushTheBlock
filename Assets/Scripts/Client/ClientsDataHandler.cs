@@ -1,16 +1,20 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
 
 public class ClientsDataHandler
 {
     private Client client;
     private OtherPlayerManager otherPlayerCharManager;
+    private List<InputMessage> unAcknowledgedInputRequests = new List<InputMessage>();
+    private Vector3 lastAcknowledgedPosition = Vector3.zero;
 
     public ClientsDataHandler(Client client)
     {
         this.client = client;
         otherPlayerCharManager = new OtherPlayerManager(client);
     }
+
+
     public void Update()
     {
         otherPlayerCharManager.Update();
@@ -26,14 +30,37 @@ public class ClientsDataHandler
 
             case NetworkMessageType.Transform:
 
-                TransformMessage messageTransform = msg as TransformMessage;
+                TransformMessage transformMsg = msg as TransformMessage;
                 if (!client.IsClientsCharacterCreated)
                 {
-                    client.CreateClientsCharacter(messageTransform);
+                    client.CreateClientsCharacter(transformMsg);
                 }
                 else
                 {
-                    client.UpdateCharactersPosition(messageTransform);
+                    if(transformMsg.AcknowledgmentId != -1)
+                    {
+                        int acknoledgmentIdx = unAcknowledgedInputRequests.
+                        FindIndex(it => it.RequestId == transformMsg.AcknowledgmentId);
+                        if (acknoledgmentIdx != -1)
+                        {
+                            /* Removes this unacknowledged message and all that came before */
+                            unAcknowledgedInputRequests.RemoveRange(0, acknoledgmentIdx + 1);
+
+                            /* Peform position predition based on last acknowledged position */
+                            lastAcknowledgedPosition = transformMsg.Position.Vect3;
+                            Vector3 newPosBasedOnAck = new Vector3(lastAcknowledgedPosition.x,
+                                lastAcknowledgedPosition.y, lastAcknowledgedPosition.z);
+                            foreach (InputMessage inputMsg in unAcknowledgedInputRequests)
+                            {
+                                newPosBasedOnAck += client.GetPositionChangeBasedOnInput(inputMsg);
+                            }
+                            client.UpdateCharactersPosition(newPosBasedOnAck);
+                        }
+                    }
+                    else
+                    {
+                        client.UpdateCharactersTransform(transformMsg);
+                    }
                 }
                 
                 break;
@@ -50,5 +77,9 @@ public class ClientsDataHandler
                 otherPlayerCharManager.DespawnDisconnectedPlayer(msg as DisconnectMessage);
                 break;
         }
+    }
+    public void AddUnAcknowledgedMsg(InputMessage msg)
+    {
+        unAcknowledgedInputRequests.Add(msg);
     }
 }

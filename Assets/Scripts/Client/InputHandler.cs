@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public class InputHandler
 {
-    private Rigidbody playerBody;
+    private Transform playerTransf;
     private Vector2 touchStartPosition;
     private bool isInputHandlerInited = false;
 
@@ -11,7 +11,7 @@ public class InputHandler
     {
         List<InputType> inputs = new List<InputType>();
 
-        if(isClientCreated)
+        if (isClientCreated)
         {
             HandleDesktopControlls(inputs);
             HandleTouchControlls(inputs);
@@ -24,37 +24,64 @@ public class InputHandler
 
         return inputs;
     }
-    public void InitInputHandler(Rigidbody playerBody)
+    public void InitInputHandler(Transform playerTransf)
     {
-        if(!isInputHandlerInited)
+        if (!isInputHandlerInited)
         {
-            this.playerBody = playerBody;
+            this.playerTransf = playerTransf;
             isInputHandlerInited = true;
         }
+    }
+    public Vector3 GetPositionChangeBasedOnInput(InputMessage inputMsg)
+    {
+        Vector3 positionChange = Vector3.zero;
+
+        foreach (InputType inputType in inputMsg.InputTypeMsg)
+        {
+            switch (inputType)
+            {
+                case InputType.MoveBack:
+                    positionChange.z -= GameConsts.MOVE_SPEED;
+                    break;
+
+                case InputType.MoveForward:
+                    positionChange.z += GameConsts.MOVE_SPEED;
+                    break;
+
+                case InputType.MoveLeft:
+                    positionChange.x -= GameConsts.MOVE_SPEED;
+                    break;
+
+                case InputType.MoveRight:
+                    positionChange.x += GameConsts.MOVE_SPEED;
+                    break;
+            }
+        }
+
+        return positionChange;
     }
 
     private void HandleDesktopControlls(List<InputType> inputs)
     {
-
         if (Input.GetKey(KeyCode.UpArrow))
         {
-            MoveFoward();
+            MoveCharacterForward();
             inputs.Add(InputType.MoveForward);
         }
         else if (Input.GetKey(KeyCode.DownArrow))
         {
-            MoveBack();
+            MoveCharacterBackward();
             inputs.Add(InputType.MoveBack);
         }
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            MoveLeft();
+            MoveCharacterLeft();
             inputs.Add(InputType.MoveLeft);
         }
         else if (Input.GetKey(KeyCode.RightArrow))
         {
-            MoveRight();
+            MoveCharacterRight();
             inputs.Add(InputType.MoveRight);
         }
     }
@@ -78,28 +105,28 @@ public class InputHandler
                     if (swipeDistVertical > swipeDistHorizontal && swipeDistVertical > 0.1f)
                     {
                         float swipeValue = Mathf.Sign(touch.position.y - touchStartPosition.y);
-                        if (swipeValue > 0)//up swipe
+                        if (swipeValue > 0)     //Up swipe
                         {
-                            MoveFoward();
+                            MoveCharacterForward();
                             inputs.Add(InputType.MoveForward);
                         }
-                        else if (swipeValue < 0)//down swipe
+                        else if (swipeValue < 0)        //Down swipe
                         {
-                            MoveBack();
+                            MoveCharacterBackward();
                             inputs.Add(InputType.MoveBack);
                         }
                     }
                     else if (swipeDistHorizontal > 0.1f)
                     {
                         float swipeValue = Mathf.Sign(touch.position.x - touchStartPosition.x);
-                        if (swipeValue > 0)//right swipe
+                        if (swipeValue > 0)     //Right swipe
                         {
-                            MoveRight();
+                            MoveCharacterRight();
                             inputs.Add(InputType.MoveRight);
                         }
-                        else if (swipeValue < 0)//left swipe
+                        else if (swipeValue < 0)    //Left swipe
                         {
-                            MoveLeft();
+                            MoveCharacterLeft();
                             inputs.Add(InputType.MoveLeft);
                         }
                     }
@@ -107,20 +134,20 @@ public class InputHandler
             }
         }
     }
-    private void MoveLeft()
+    private void MoveCharacterLeft()
     {
-        playerBody.AddForce(Vector3.left * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+        playerTransf.position += Vector3.left * GameConsts.MOVE_SPEED;
     }
-    private void MoveRight()
+    private void MoveCharacterRight()
     {
-        playerBody.AddForce(Vector3.right * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+        playerTransf.position += Vector3.right * GameConsts.MOVE_SPEED;
     }
-    private void MoveBack()
+    private void MoveCharacterBackward()
     {
-        playerBody.AddForce(Vector3.back * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+        playerTransf.position += Vector3.back * GameConsts.MOVE_SPEED;
     }
-    private void MoveFoward()
+    private void MoveCharacterForward()
     {
-        playerBody.AddForce(Vector3.forward * GameConsts.MOVE_SPEED * GameConsts.SERVER_DELTA_TIME);
+        playerTransf.position += Vector3.forward * GameConsts.MOVE_SPEED;
     }
 }

@@ -5,6 +5,7 @@ using System;
 [Serializable]
 public class TransformMessage : ConnectionId, Message
 {
+    private int acknowledgmnentId = -1;
     private SerializableVector3 position;
     private SerializableVector3 scale;
     private SerializableQuaternion rotation;
@@ -14,7 +15,7 @@ public class TransformMessage : ConnectionId, Message
         position = new SerializableVector3();
         scale = new SerializableVector3();
         rotation = new SerializableQuaternion();
-        this.receiverid = receiverId;
+        this.receiverId = receiverId;
     }
 
     public SerializableVector3 Position
@@ -29,14 +30,17 @@ public class TransformMessage : ConnectionId, Message
     {
         get { return rotation; }
     }
-
     public NetworkMessageType GetNetworkMessageType()
     {
         return NetworkMessageType.Transform;
     }
-
     public int GetReceiverId()
     {
-        return receiverid;
+        return receiverId;
+    }
+    public int AcknowledgmentId
+    {
+        get { return acknowledgmnentId; }
+        set { acknowledgmnentId = value; }
     }
 }

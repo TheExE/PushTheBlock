@@ -4,7 +4,7 @@ using System.Collections;
 public class Character
 {
     private GameObject playerCharacterObj;
-    private Rigidbody characterPhysicsBody;
+    private Transform characterTransf;
     private int connectionId;
     private Vector2 homePosition;
     private Vector3 lastSentPosition;
@@ -13,7 +13,7 @@ public class Character
     {
         this.connectionId = connectionId;
         playerCharacterObj = characterObject;
-        characterPhysicsBody = characterObject.GetComponent<Rigidbody>();
+        characterTransf = characterObject.GetComponent<Transform>();
         var pos = characterObject.transform.position;
         homePosition = new Vector2(pos.x, pos.y);
         lastSentPosition = new Vector3();
@@ -28,13 +28,6 @@ public class Character
             Reset();
         }
 
-        /* CAP VELOCITY OF CLIENTS CHARACTER */
-        if (characterPhysicsBody.velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
-        {
-            characterPhysicsBody.velocity = characterPhysicsBody.
-                velocity.normalized * GameConsts.MAX_MOVE_SPEED;
-        }
-
         return lastCollisionId;
     }
 
@@ -47,9 +40,9 @@ public class Character
     {
         get { return playerCharacterObj; }
     }
-    public Rigidbody CharacterPhysicsBody
+    public Transform CharacterTransform
     {
-        get { return characterPhysicsBody; }
+        get { return characterTransf; }
     }
 
 

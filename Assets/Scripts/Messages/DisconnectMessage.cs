@@ -7,7 +7,7 @@ public class DisconnectMessage : ConnectionId, Message
 {
     public DisconnectMessage(int receiverId)
     {
-        this.receiverid = receiverId;
+        this.receiverId = receiverId;
     }
 
     public NetworkMessageType GetNetworkMessageType()
@@ -17,6 +17,6 @@ public class DisconnectMessage : ConnectionId, Message
 
     public int GetReceiverId()
     {
-        return receiverid;
+        return receiverId;
     }
 }
