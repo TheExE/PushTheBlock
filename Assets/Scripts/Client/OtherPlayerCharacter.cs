@@ -7,7 +7,7 @@ public class OtherPlayerCharacter : Character
 
     public OtherPlayerCharacter(GameObject charObject, int playerId) : base(charObject, playerId)
     {
-        posInterpol = new Vect3LerpManager(3f);
+        posInterpol = new Vect3LerpManager(4f, 10);
     }
     public void AddInterpolationPos(Vector3 pos)
     {

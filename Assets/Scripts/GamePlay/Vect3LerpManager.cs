@@ -12,11 +12,13 @@ public class Vect3LerpManager
     private float distToTarget;
     private float speed;
     private bool initTargetPos = true;
+    private int maxBacklogMsges;
 
-    public Vect3LerpManager(float speed)
+    public Vect3LerpManager(float speed, int maxBacklogMsges)
     {
         lerpTargets = new Queue<Vector3>();
         this.speed = speed;
+        this.maxBacklogMsges = maxBacklogMsges;
     }
 
     public void CancelAllInterpolations()
@@ -61,13 +63,16 @@ public class Vect3LerpManager
     {
         if(!lerpTargets.Contains(position))
         {
+            if(lerpTargets.Count > maxBacklogMsges)
+            {
+                lerpTargets.Clear();
+            }
             lerpTargets.Enqueue(position);
             if (lerpTargets.Count > 0)
             {
                 isReadyToInterPos = true;
             }
         }
-        
     }
 
     public bool IsReadyToInterpol
