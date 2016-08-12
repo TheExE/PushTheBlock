@@ -43,30 +43,31 @@ public class ServerClientDataManager
     public void HandlePlayerInput(ServerNetworkManager servNetworkManager, InputMessage msgInput)
     {
         Transform characterTransf = allCharacters.Find(it => it.ClientId == msgInput.ReceiverId)
-                 .CharacterObj.GetComponent<Transform>();  
-
+                 .CharacterObj.GetComponent<Transform>();
+        float deltaTime = Time.deltaTime + (System.DateTime.Now.Subtract(msgInput.TimeStamp).Milliseconds / 1000f);
         foreach (InputType type in msgInput.InputTypeMsg)
         {
+
             switch (type)
             {
                 case InputType.MoveBack:
 
-                    characterTransf.position += GetVelocityToMoveBack();
+                    characterTransf.position += GetVelocityToMoveBack(deltaTime);
                     break;
 
                 case InputType.MoveForward:
 
-                    characterTransf.position += GetVelocityToMoveForward();
+                    characterTransf.position += GetVelocityToMoveForward(deltaTime);
                     break;
 
                 case InputType.MoveLeft:
 
-                    characterTransf.position += GetVelocityToMoveLeft();
+                    characterTransf.position += GetVelocityToMoveLeft(deltaTime);
                     break;
 
                 case InputType.MoveRight:
 
-                    characterTransf.position += GetVelocityToMoveRight();
+                    characterTransf.position += GetVelocityToMoveRight(deltaTime);
                     break;
             }
         }
@@ -145,20 +146,20 @@ public class ServerClientDataManager
             }
         }
     }
-    private Vector3 GetVelocityToMoveLeft()
+    private Vector3 GetVelocityToMoveLeft(float deltaTime)
     {
-        return Vector3.left * GameConsts.MOVE_SPEED * Time.deltaTime;
+        return Vector3.left * GameConsts.MOVE_SPEED * deltaTime;
     }
-    private Vector3 GetVelocityToMoveRight()
+    private Vector3 GetVelocityToMoveRight(float deltaTime)
     {
-        return Vector3.right * GameConsts.MOVE_SPEED * Time.deltaTime;
+        return Vector3.right * GameConsts.MOVE_SPEED * deltaTime;
     }
-    private Vector3 GetVelocityToMoveBack()
+    private Vector3 GetVelocityToMoveBack(float deltaTime)
     {
-        return Vector3.back * GameConsts.MOVE_SPEED * Time.deltaTime;
+        return Vector3.back * GameConsts.MOVE_SPEED * deltaTime;
     }
-    private Vector3 GetVelocityToMoveForward()
+    private Vector3 GetVelocityToMoveForward(float deltaTime)
     {
-        return Vector3.forward * GameConsts.MOVE_SPEED * Time.deltaTime;
+        return Vector3.forward * GameConsts.MOVE_SPEED * deltaTime;
     }
 }

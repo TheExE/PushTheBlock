@@ -29,16 +29,16 @@ public class ClientsNetworkManager
 
     public void Update(ClientsDataHandler clientsDataManager, Character playerChar, List<InputType> inputs)
     {
+        /* Receives data from server */
+        ReceiveData(clientsDataManager);
+
         /* Informs server about player inputs */
         if (playerChar != null && inputs.Count > 0)
         {
-            InputMessage inputMsg = new InputMessage(playerChar.ClientId, inputs.ToArray());
+            InputMessage inputMsg = new InputMessage(playerChar.ClientId, inputs.ToArray(), System.DateTime.Now);
             SendRelibleMessage(inputMsg, connectionId);
             clientsDataManager.AddUnAcknowledgedMsg(inputMsg);
         }
-
-        /* Receives data from server */
-        ReceiveData(clientsDataManager);
     }
 
     private void SendCharPosition(Vector3 playerCharPos, int clientId)

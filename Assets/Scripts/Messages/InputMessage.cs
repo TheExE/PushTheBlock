@@ -8,9 +8,11 @@ public class InputMessage : ConnectionId, Message
     private static int uniqueId = 0;
     private int msgId;
     private InputType[] inputType;
+    private DateTime timeStamp;
 
-    public InputMessage(int receiverId, InputType[] inputType)
+    public InputMessage(int receiverId, InputType[] inputType, DateTime curTime)
     {
+        this.timeStamp = curTime;
         this.inputType = inputType;
         this.receiverId = receiverId;
         if (msgId > GameConsts.MAX_QUEUED_MSGES)
@@ -39,5 +41,9 @@ public class InputMessage : ConnectionId, Message
     public int RequestId
     {
         get { return msgId; }
+    }
+    public DateTime TimeStamp
+    {
+        get { return timeStamp; }
     }
 }
