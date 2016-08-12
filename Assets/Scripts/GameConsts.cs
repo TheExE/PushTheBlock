@@ -7,19 +7,10 @@ class GameConsts
 {
     public const string SERVER_IP = "127.0.0.1";
     public const int SERVER_PORT = 64245;
-    public const float TTW_FOR_POS_UPDATE = 0.5f;
     public const int MAX_QUEUED_MSGES = 2000;
 
-    public const float TTW_FOR_OTHER_CHAR_POS_UPDATE = 0.8f;
-    public const float SERVER_DELTA_TIME = 0.02f;
-    public const float MOVE_SPEED = 0.1f;
-    public const float MAX_MOVE_SPEED = 15f;
+    public const float TTW_FOR_OTHER_CHAR_POS_UPDATE = 0.5f;
+    public const float MOVE_SPEED = 5f;
     public const int MAX_SIMULTINEOUS_INPUTS = 2;
-
-
-    public const float PLAIN_FORWARD = 1.72f;
-    public const float PLAIN_BACKWARD = -3.21f;
-    public const float PLAIN_LEFT = 2.26f;
-    public const float PLAIN_RIGHT = -3.34f;
 }
 

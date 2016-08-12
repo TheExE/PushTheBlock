@@ -123,16 +123,7 @@ public class ServerClientDataManager
         }
     }
 
-    private Vector3 GetFinalPosition(Vector3 curPosition, Vector3 velocity)
-    {
-        /* CAP Velocity */
-        if (velocity.magnitude > GameConsts.MAX_MOVE_SPEED)
-        {
-            velocity = velocity.normalized * GameConsts.MAX_MOVE_SPEED;
-        }
-
-        return curPosition + velocity;
-    }
+   
     private void UpdatePlayers(ServerNetworkManager servNetworkManager)
     {
         foreach (Character p in allCharacters)
@@ -156,18 +147,18 @@ public class ServerClientDataManager
     }
     private Vector3 GetVelocityToMoveLeft()
     {
-        return Vector3.left * GameConsts.MOVE_SPEED;
+        return Vector3.left * GameConsts.MOVE_SPEED * Time.deltaTime;
     }
     private Vector3 GetVelocityToMoveRight()
     {
-        return Vector3.right * GameConsts.MOVE_SPEED;
+        return Vector3.right * GameConsts.MOVE_SPEED * Time.deltaTime;
     }
     private Vector3 GetVelocityToMoveBack()
     {
-        return Vector3.back * GameConsts.MOVE_SPEED;
+        return Vector3.back * GameConsts.MOVE_SPEED * Time.deltaTime;
     }
     private Vector3 GetVelocityToMoveForward()
     {
-        return Vector3.forward * GameConsts.MOVE_SPEED;
+        return Vector3.forward * GameConsts.MOVE_SPEED * Time.deltaTime;
     }
 }

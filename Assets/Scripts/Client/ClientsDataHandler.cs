@@ -46,7 +46,7 @@ public class ClientsDataHandler
                             /* Removes this unacknowledged message and all that came before */
                             unAcknowledgedInputRequests.RemoveRange(0, acknoledgmentIdx + 1);
 
-                            /* Peform position predition based on last acknowledged position */
+                            /* Peform position prediction based on last acknowledged position */
                             lastAcknowledgedPosition = transformMsg.Position.Vect3;
                             Vector3 newPosBasedOnAck = new Vector3(lastAcknowledgedPosition.x,
                                 lastAcknowledgedPosition.y, lastAcknowledgedPosition.z);

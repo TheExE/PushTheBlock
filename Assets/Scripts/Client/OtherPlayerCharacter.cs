@@ -3,18 +3,18 @@ using System.Collections;
 
 public class OtherPlayerCharacter : Character
 {
-    private PositionInterpolation posInterpol;
+    private Vect3LerpManager posInterpol;
 
     public OtherPlayerCharacter(GameObject charObject, int playerId) : base(charObject, playerId)
     {
-        posInterpol = new PositionInterpolation();
+        posInterpol = new Vect3LerpManager(3f);
     }
     public void AddInterpolationPos(Vector3 pos)
     {
         /* Dont need to interpolate to position that we already are at */
         if(!IsVector3sEqual(pos, CharacterObj.transform.position))
         {
-            posInterpol.AddPosition(pos);
+            posInterpol.AddLerp(pos);
         }
     }
     public void IterpolatePositions()

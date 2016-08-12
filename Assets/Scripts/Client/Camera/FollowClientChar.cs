@@ -3,23 +3,20 @@ using System.Collections;
 
 public class FollowClientChar : MonoBehaviour
 {
-    public float offsetY;
-    public float offsetZ;
+    public Vector3 offset;
 
     private Transform clientsCharTransf;
     private bool isInited = false;
     private Vector3 offsetFromChar;
-
-    void Start()
-    {
-        offsetFromChar = new Vector3(0, offsetY, offsetZ);
-    }
+    private Vect3LerpManager cameraLerp;
+    private Vector3 lastCharPosition;
+    private float lastCharRotation;
 
 	void Update ()
     {
         if(isInited)
         {
-            transform.position = clientsCharTransf.transform.position + offsetFromChar;
+            transform.position = clientsCharTransf.transform.position + offset;
         }
 	}
 

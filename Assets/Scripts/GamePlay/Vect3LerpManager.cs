@@ -1,28 +1,34 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class PositionInterpolation
+public class Vect3LerpManager
 {
-    private Queue<Vector3> interpolationPositions;
+    private Queue<Vector3> lerpTargets;
     private bool isReadyToInterPos = false;
-    private Vector3 posToInterpolateTo;
-    private Vector3 posToInterpolateFrom;
+    private Vector3 interpolateTo;
+    private Vector3 interpolateFrom;
     private float curLearpProg = 0f;
     private float startTime;
     private float distToTarget;
-    private float speed = 2.5f;
+    private float speed;
     private bool initTargetPos = true;
 
-    public PositionInterpolation()
+    public Vect3LerpManager(float speed)
     {
-        interpolationPositions = new Queue<Vector3>();
+        lerpTargets = new Queue<Vector3>();
+        this.speed = speed;
     }
 
+    public void CancelAllInterpolations()
+    {
+        lerpTargets.Clear();
+        isReadyToInterPos = false;
+    }
     public Vector3 Interpolate()
     {
         float distCovered = (Time.time - startTime) * speed;
         curLearpProg = distCovered / distToTarget;
-        Vector3 result = Vector3.Lerp(posToInterpolateFrom, posToInterpolateTo, curLearpProg);
+        Vector3 result = Vector3.Lerp(interpolateFrom, interpolateTo, curLearpProg);
         if(curLearpProg > 1)
         {
             initTargetPos = true;
@@ -31,12 +37,12 @@ public class PositionInterpolation
     }
     public void UpdateInterpolationTarget(Vector3 pos)
     { 
-       if (interpolationPositions.Count != 0 && initTargetPos)
+       if (lerpTargets.Count != 0 && initTargetPos)
         {
-            posToInterpolateFrom = new Vector3(pos.x, pos.y, pos.z);
-            posToInterpolateTo = interpolationPositions.Dequeue();
+            interpolateFrom = new Vector3(pos.x, pos.y, pos.z);
+            interpolateTo = lerpTargets.Dequeue();
             startTime = Time.time;
-            distToTarget = Vector3.Distance(posToInterpolateFrom, posToInterpolateTo);
+            distToTarget = Vector3.Distance(interpolateFrom, interpolateTo);
             curLearpProg = 0f;
             if(distToTarget > 0)
             {
@@ -45,18 +51,18 @@ public class PositionInterpolation
             }
         }
 
-        if((interpolationPositions.Count == 0 && curLearpProg >= 1) || distToTarget == 0)
+        if((lerpTargets.Count == 0 && curLearpProg >= 1) || distToTarget == 0)
         {
             isReadyToInterPos = false;
         }
     }
 
-    public void AddPosition(Vector3 position)
+    public void AddLerp(Vector3 position)
     {
-        if(!interpolationPositions.Contains(position))
+        if(!lerpTargets.Contains(position))
         {
-            interpolationPositions.Enqueue(position);
-            if (interpolationPositions.Count > 0)
+            lerpTargets.Enqueue(position);
+            if (lerpTargets.Count > 0)
             {
                 isReadyToInterPos = true;
             }
