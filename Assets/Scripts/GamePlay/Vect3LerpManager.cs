@@ -13,12 +13,14 @@ public class Vect3LerpManager
     private float speed;
     private bool initTargetPos = true;
     private int maxBacklogMsges;
+    private bool shouldLerpY;
 
-    public Vect3LerpManager(float speed, int maxBacklogMsges)
+    public Vect3LerpManager(float speed, int maxBacklogMsges, bool shouldLerpY)
     {
         lerpTargets = new Queue<Vector3>();
         this.speed = speed;
         this.maxBacklogMsges = maxBacklogMsges;
+        this.shouldLerpY = shouldLerpY;
     }
 
     public void CancelAllInterpolations()
@@ -28,25 +30,31 @@ public class Vect3LerpManager
     }
     public Vector3 Interpolate()
     {
-        float distCovered = (Time.time - startTime) * speed;
+        float distCovered = speed * (Time.time - startTime);
         curLearpProg = distCovered / distToTarget;
         Vector3 result = Vector3.Lerp(interpolateFrom, interpolateTo, curLearpProg);
         if(curLearpProg > 1)
         {
             initTargetPos = true;
         }
+
+        if (!shouldLerpY && interpolateFrom.y != interpolateTo.y)
+        {
+            initTargetPos = true;
+            result = interpolateTo;
+        }
         return result;
     }
     public void UpdateInterpolationTarget(Vector3 pos)
-    { 
-       if (lerpTargets.Count != 0 && initTargetPos)
+    {
+        if (lerpTargets.Count != 0 && initTargetPos)
         {
             interpolateFrom = new Vector3(pos.x, pos.y, pos.z);
             interpolateTo = lerpTargets.Dequeue();
             startTime = Time.time;
             distToTarget = Vector3.Distance(interpolateFrom, interpolateTo);
             curLearpProg = 0f;
-            if(distToTarget > 0)
+            if (distToTarget > 0)
             {
                 isReadyToInterPos = true;
                 initTargetPos = false;
@@ -65,7 +73,12 @@ public class Vect3LerpManager
         {
             if(lerpTargets.Count > maxBacklogMsges)
             {
-                lerpTargets.Clear();
+                int msgCountToRemove = maxBacklogMsges / 4;
+                while(msgCountToRemove > 0)
+                {
+                    lerpTargets.Dequeue();
+                    msgCountToRemove--;
+                }
             }
             lerpTargets.Enqueue(position);
             if (lerpTargets.Count > 0)

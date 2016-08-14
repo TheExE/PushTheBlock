@@ -54,7 +54,7 @@ public class ClientsDataHandler
                             {
                                 newPosBasedOnAck += client.GetPositionChangeBasedOnInput(inputMsg);
                             }
-                            client.UpdateCharactersPosition(newPosBasedOnAck);
+                            client.SlowlyUpdateCharactersPosition(newPosBasedOnAck);
                         }
                     }
                     else

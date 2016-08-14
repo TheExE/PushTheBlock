@@ -79,9 +79,17 @@ public class Client : MonoBehaviour
         playerChar.CharacterObj.transform.localScale = transformMsg.Scale.Vect3;
         playerChar.CharacterObj.transform.rotation = transformMsg.Rotation.Quaternion;
     }
-    public void UpdateCharactersPosition(Vector3 position)
+    public void SlowlyUpdateCharactersPosition(Vector3 position)
     {
-        playerChar.CharacterObj.transform.position = position;
+        Vector3 curPosition = playerChar.CharacterTransform.position;
+        if((curPosition - position).magnitude > 0.5f)
+        {
+            playerChar.CharacterTransform.position = Vector3.Lerp(curPosition, position, 0.5f);
+        }
+        else
+        {
+            playerChar.CharacterTransform.position = position;
+        }
     }
     public GameObject SpawnCharacter()
     {

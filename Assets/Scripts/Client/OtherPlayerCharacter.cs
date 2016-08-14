@@ -7,12 +7,12 @@ public class OtherPlayerCharacter : Character
 
     public OtherPlayerCharacter(GameObject charObject, int playerId) : base(charObject, playerId)
     {
-        posInterpol = new Vect3LerpManager(4f, 10);
+        posInterpol = new Vect3LerpManager(GameConsts.MOVE_SPEED, GameConsts.MAX_OP_POS_IN_QUEUE, false);
     }
     public void AddInterpolationPos(Vector3 pos)
     {
         /* Dont need to interpolate to position that we already are at */
-        if(!IsVector3sEqual(pos, CharacterObj.transform.position))
+        if(!IsVector3sEqual(pos, CharacterTransform.position))
         {
             posInterpol.AddLerp(pos);
         }
