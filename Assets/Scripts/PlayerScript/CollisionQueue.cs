@@ -16,11 +16,6 @@ public class CollisionQueue : MonoBehaviour
         }
     }
 
-
-    void Update()
-    {
-    }
-
     public void OnCollisionExit(Collision collision)
     {
         if (isServerSide)

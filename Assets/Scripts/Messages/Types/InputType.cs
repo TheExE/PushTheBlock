@@ -6,5 +6,7 @@ public enum InputType
     MoveForward,
     MoveLeft,
     MoveRight,
-    MoveBack
+    MoveBack,
+	MoveUp,
+	MoveDown,
 }

@@ -13,9 +13,9 @@ public class InputHandler
 
         if (isClientCreated)
         {
-            HandleDesktopControlls(inputs);
-            HandleTouchControlls(inputs);
-            ExecuteCharControlls(inputs);
+            HandleDesktopControls2D(inputs);
+            HandleTouchControls(inputs);
+            ExecuteCharControls(inputs);
         }
 
         if (Input.GetKey(KeyCode.Escape))
@@ -25,6 +25,12 @@ public class InputHandler
 
         return inputs;
     }
+
+	/// <summary>
+	/// Link input handler to players
+	/// transform in the world.
+	/// </summary>
+	/// <param name="playerTransf"></param>
     public void InitInputHandler(Transform playerTransf)
     {
         if (!isInputHandlerInited)
@@ -33,6 +39,7 @@ public class InputHandler
             isInputHandlerInited = true;
         }
     }
+
     public Vector3 GetPositionChangeBasedOnInput(InputMessage inputMsg)
     {
         Vector3 positionChange = Vector3.zero;
@@ -56,13 +63,21 @@ public class InputHandler
                 case InputType.MoveRight:
                     positionChange.x += GameConsts.MOVE_SPEED * Time.deltaTime;
                     break;
-            }
+
+	            case InputType.MoveUp:
+		            positionChange.y += GameConsts.MOVE_SPEED * Time.deltaTime;
+		            break;
+
+	            case InputType.MoveDown:
+		            positionChange.y -= GameConsts.MOVE_SPEED * Time.deltaTime;
+		            break;
+			}
         }
 
         return positionChange;
     }
 
-    private void ExecuteCharControlls(List<InputType> inputs)
+    private void ExecuteCharControls(List<InputType> inputs)
     {
         foreach (InputType inputType in inputs)
         {
@@ -87,30 +102,60 @@ public class InputHandler
 
                     MoveCharacterRight();
                     break;
-            }
 
+	            case InputType.MoveDown:
+
+		            MoveCharacterDown();
+		            break;
+
+	            case InputType.MoveUp:
+
+		            MoveCharacterUp();
+		            break;
+			}
         }
     }
-    private void HandleDesktopControlls(List<InputType> inputs)
+    private void HandleDesktopControls3D(List<InputType> inputs)
     {
-        if (Input.GetKey(KeyCode.UpArrow))
+        if (Input.GetKey(KeyCode.W))
         {
             inputs.Add(InputType.MoveForward);
         }
-        else if (Input.GetKey(KeyCode.DownArrow))
+        else if (Input.GetKey(KeyCode.S))
         {
             inputs.Add(InputType.MoveBack);
         }
-        else if (Input.GetKey(KeyCode.LeftArrow))
+        else if (Input.GetKey(KeyCode.A))
         {
             inputs.Add(InputType.MoveLeft);
         }
-        else if (Input.GetKey(KeyCode.RightArrow))
+        else if (Input.GetKey(KeyCode.D))
         {
             inputs.Add(InputType.MoveRight);
         }
     }
-    private void HandleTouchControlls(List<InputType> inputs)
+
+	private void HandleDesktopControls2D(List<InputType> inputs)
+	{
+		if (Input.GetKey(KeyCode.W))
+		{
+			inputs.Add(InputType.MoveUp);
+		}
+		else if (Input.GetKey(KeyCode.S))
+		{
+			inputs.Add(InputType.MoveDown);
+		}
+		else if (Input.GetKey(KeyCode.A))
+		{
+			inputs.Add(InputType.MoveLeft);
+		}
+		else if (Input.GetKey(KeyCode.D))
+		{
+			inputs.Add(InputType.MoveRight);
+		}
+	}
+
+	private void HandleTouchControls(List<InputType> inputs)
     {
         if (Input.touchCount > 0)
         {
@@ -155,15 +200,28 @@ public class InputHandler
             }
         }
     }
-    private void MoveCharacterLeft()
+
+	private void MoveCharacterLeft()
     {
         playerTransf.position += Vector3.left * GameConsts.MOVE_SPEED * Time.deltaTime;
     }
+
     private void MoveCharacterRight()
     {
         playerTransf.position += Vector3.right * GameConsts.MOVE_SPEED * Time.deltaTime;
     }
-    private void MoveCharacterBackward()
+
+	private void MoveCharacterUp()
+	{
+		playerTransf.position += Vector3.up * GameConsts.MOVE_SPEED * Time.deltaTime;
+	}
+
+	private void MoveCharacterDown()
+	{
+		playerTransf.position += Vector3.down * GameConsts.MOVE_SPEED * Time.deltaTime;
+	}
+
+	private void MoveCharacterBackward()
     {
         playerTransf.position += Vector3.back * GameConsts.MOVE_SPEED * Time.deltaTime;
     }

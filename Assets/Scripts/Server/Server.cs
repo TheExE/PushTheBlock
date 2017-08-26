@@ -2,38 +2,45 @@
 using System.Collections.Generic;
 
 public class Server : MonoBehaviour
-{ 
-    public GameObject playerPrefab;
+{	
+	[SerializeField] private GameObject _playerPrefab;
+    private ServerNetworkManager _networkManager;
+    private ServerClientDataManager _clientDataManager;
 
-    private ServerNetworkManager networkManager;
-    private ServerClientDataManager clientDataManager;
-    
-	void Start ()
+
+	/// <summary>
+	/// Destroy the games object.
+	/// </summary>	
+	public void DeleteGameObject(GameObject gameObjToDestroy)
+	{
+		Destroy(gameObjToDestroy);
+	}
+
+	/// <summary>
+	/// Spawn the player in the world.
+	/// </summary>
+	/// <param name="connectionId"> The id for the player that connected. </param>
+	/// <returns></returns>
+	public GameObject SpawnClientsCharacter(int connectionId)
+	{
+		GameObject a = Instantiate(_playerPrefab) as GameObject;
+		a.transform.parent = transform;
+		a.transform.position = new Vector3(0, 0);		
+
+		return a;
+	}
+
+	private void Awake ()
     {
         Application.targetFrameRate = 60;
         Application.runInBackground = true;
 
-        clientDataManager = new ServerClientDataManager();
-        networkManager = new ServerNetworkManager(clientDataManager);
+        _clientDataManager = new ServerClientDataManager();
+        _networkManager = new ServerNetworkManager(_clientDataManager);
     }
 	
-	void Update ()
+	private void Update ()
     {
-        networkManager.Update(this);
-        clientDataManager.Update(networkManager);
-    }
-
-    public void DeleteGameObject(GameObject gameObjToDestroy)
-    {
-        Destroy(gameObjToDestroy);
-    }
-    public GameObject SpawnClientsCharacter(int connectionId)
-    {
-        GameObject a = Instantiate(playerPrefab) as GameObject;
-        a.transform.parent = transform;
-        a.transform.position = new Vector3(0, 30f);
-        a.GetComponent<CollisionQueue>().ClientId = connectionId;
-
-        return a;
+        _networkManager.Update(this);
     }
 }

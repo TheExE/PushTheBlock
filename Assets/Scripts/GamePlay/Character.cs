@@ -3,57 +3,40 @@ using System.Collections;
 
 public class Character
 {
-    private GameObject playerCharacterObj;
-    private Transform characterTransf;
-    private int connectionId;
-    private Vector2 homePosition;
-    private Vector3 lastSentPosition;
+    private GameObject _playerCharacterObj;
+    private Transform _characterTransf;
+    private int _connectionId;
+    private Vector2 _homePosition;
+    private Vector3 _lastSentPosition;
 
     public Character(GameObject characterObject, int connectionId)
     {
-        this.connectionId = connectionId;
-        playerCharacterObj = characterObject;
-        characterTransf = characterObject.GetComponent<Transform>();
+        _connectionId = connectionId;
+        _playerCharacterObj = characterObject;
+        _characterTransf = characterObject.GetComponent<Transform>();
         var pos = characterObject.transform.position;
-        homePosition = new Vector2(pos.x, pos.y);
-        lastSentPosition = new Vector3();
-    }
-
-    public int Update()
-    {
-        int lastCollisionId = -1;
-        if(playerCharacterObj.transform.position.y < 0)
-        {
-            lastCollisionId = playerCharacterObj.GetComponent<CollisionQueue>().LastPlayerCollisionId;
-            Reset();
-        }
-
-        return lastCollisionId;
-    }
-
-    public void Reset()
-    {
-        playerCharacterObj.transform.position = new Vector2(homePosition.x, homePosition.y);
+        _homePosition = new Vector2(pos.x, pos.y);
+        _lastSentPosition = new Vector3();
     }
 
     public GameObject CharacterObj
     {
-        get { return playerCharacterObj; }
-    }
-    public Transform CharacterTransform
-    {
-        get { return characterTransf; }
+        get { return _playerCharacterObj; }
     }
 
+    public Transform CharacterTransform
+    {
+        get { return _characterTransf; }
+    }
 
     public int ClientId
     {
-        get { return connectionId; }
+        get { return _connectionId; }
     }
 
     public Vector3 LastSentPosition
     {
-        get { return lastSentPosition; }
-        set { lastSentPosition = value; }
+        get { return _lastSentPosition; }
+        set { _lastSentPosition = value; }
     }
 }
